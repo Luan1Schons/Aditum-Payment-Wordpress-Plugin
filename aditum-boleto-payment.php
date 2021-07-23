@@ -1,16 +1,24 @@
 <?php
 
 /**
- * Plugin name: Aditum Payment Boleto
- * Description: Aditum Payment for woocommerce
- * Version: 1.0.0
+ * Plugin Name:       Aditum Boleto Gateway
+ * Plugin URI:        https://aditum.com.br/
+ * Description:       Gateway de pagamento de boleto do Aditum para o WooCommerce
+ * Version:           1.0.0
+ * Requires at least: 5.2
+ * Requires PHP:      7.2
+ * Author:            ER Soluções Web
+ * Author URI:        https://www.ersolucoesweb.com.br/
+ * License:           GPL v2 or later
+ * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
+ * Update URI:        https://www.ersolucoesweb.com.br/
+ * Text Domain:       aditum-gateway-boleto
  */
 
 require_once dirname( __FILE__, 1 ) . '/vendor/autoload.php';
 if ( ! in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins', get_option( 'active_plugins' ) ) ) ) {
 	return;
 }
-
 
 register_activation_hook( __FILE__, 'child_plugin_activate' );
 function child_plugin_activate() {
@@ -28,6 +36,9 @@ add_action( 'plugins_loaded', 'aditum_boleto_payment_init', 11 );
  */
 function aditum_boleto_payment_init() {
 	if ( class_exists( 'WC_Payment_Gateway' ) ) {
+		/**
+		 * Class Init WooCommerce Gateway
+		 */
 		class WC_aditum_Boleto_Pay_Gateway extends WC_Payment_Gateway {
 
 			/**
@@ -227,7 +238,7 @@ function boleto_aditum_add_content_thankyou( $order_id ) {
 			if ( 'sandbox' === $credentials->environment ) {
 				AditumPayments\ApiSDK\Configuration::setUrl( AditumPayments\ApiSDK\Configuration::DEV_URL );
 			}
-			
+
 			AditumPayments\ApiSDK\Configuration::setCnpj( $credentials->merchant_cnpj );
 			AditumPayments\ApiSDK\Configuration::setMerchantToken( $credentials->merchant_key );
 			AditumPayments\ApiSDK\Configuration::setlog( false );
@@ -282,7 +293,7 @@ function boleto_aditum_add_content_thankyou( $order_id ) {
 
 			$res = $gateway->charge( $boleto );
 			echo '<p>Debug:</p>';
-			var_dump($res);
+			var_dump( $res );
 			echo '<br><br>';
 			if ( isset( $res['status'] ) ) {
 				if ( AditumPayments\ApiSDK\Enum\ChargeStatus::PRE_AUTHORIZED === $res['status'] ) {
