@@ -1,0 +1,151 @@
+{
+    "packages": [
+        {
+            "name": "aditum-payments/aditum-api-sdk-php",
+            "version": "v2.7.6",
+            "version_normalized": "2.7.6.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/aditum-payments/aditum-api-sdk-php.git",
+                "reference": "9d683179e44eadbc4effead33e5ac44d6dcd4594"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/aditum-payments/aditum-api-sdk-php/zipball/9d683179e44eadbc4effead33e5ac44d6dcd4594",
+                "reference": "9d683179e44eadbc4effead33e5ac44d6dcd4594",
+                "shasum": ""
+            },
+            "require": {
+                "ext-curl": "*",
+                "lib-curl": "*",
+                "lib-openssl": "*",
+                "php": "^7.1.3"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "^9.5"
+            },
+            "time": "2021-06-15T15:50:59+00:00",
+            "type": "library",
+            "installation-source": "dist",
+            "autoload": {
+                "psr-4": {
+                    "AditumPayments\\ApiSDK\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "GPL-3.0-or-later"
+            ],
+            "authors": [
+                {
+                    "name": "Nibble One",
+                    "email": "jackson.garcia@nibbleone.com.br",
+                    "role": "developer"
+                }
+            ],
+            "description": "Biblioteca de integração com a Aditum",
+            "keywords": [
+                "acquirer",
+                "aditum",
+                "aditumpay",
+                "payment"
+            ],
+            "support": {
+                "issues": "https://github.com/aditum-payments/aditum-api-sdk-php/issues",
+                "source": "https://github.com/aditum-payments/aditum-api-sdk-php/tree/v2.7.6"
+            },
+            "install-path": "../aditum-payments/aditum-api-sdk-php"
+        },
+        {
+            "name": "picqer/php-barcode-generator",
+            "version": "v2.2.0",
+            "version_normalized": "2.2.0.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/picqer/php-barcode-generator.git",
+                "reference": "7df93b40099e5fefad055543320a36b80dccda05"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/picqer/php-barcode-generator/zipball/7df93b40099e5fefad055543320a36b80dccda05",
+                "reference": "7df93b40099e5fefad055543320a36b80dccda05",
+                "shasum": ""
+            },
+            "require": {
+                "ext-mbstring": "*",
+                "php": "^7.3|^8.0"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "^9.5"
+            },
+            "suggest": {
+                "ext-bcmath": "Barcode IMB (Intelligent Mail Barcode) needs bcmath extension",
+                "ext-gd": "For JPG and PNG generators, GD or Imagick is required",
+                "ext-imagick": "For JPG and PNG generators, GD or Imagick is required"
+            },
+            "time": "2021-03-27T09:06:22+00:00",
+            "type": "library",
+            "installation-source": "dist",
+            "autoload": {
+                "psr-4": {
+                    "Picqer\\Barcode\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "LGPL-3.0-or-later"
+            ],
+            "authors": [
+                {
+                    "name": "Nicola Asuni",
+                    "email": "info@tecnick.com",
+                    "homepage": "http://nicolaasuni.tecnick.com"
+                },
+                {
+                    "name": "Casper Bakker",
+                    "email": "info@picqer.com",
+                    "homepage": "https://picqer.com"
+                }
+            ],
+            "description": "An easy to use, non-bloated, barcode generator in PHP. Creates SVG, PNG, JPG and HTML images from the most used 1D barcode standards.",
+            "homepage": "https://github.com/picqer/php-barcode-generator",
+            "keywords": [
+                "CODABAR",
+                "Code11",
+                "Code93",
+                "EAN13",
+                "KIX",
+                "KIXCODE",
+                "MSI",
+                "POSTNET",
+                "Pharma",
+                "Standard 2 of 5",
+                "barcode",
+                "barcode generator",
+                "code128",
+                "code39",
+                "ean",
+                "html",
+                "jpeg",
+                "jpg",
+                "php",
+                "png",
+                "svg",
+                "upc"
+            ],
+            "support": {
+                "issues": "https://github.com/picqer/php-barcode-generator/issues",
+                "source": "https://github.com/picqer/php-barcode-generator/tree/v2.2.0"
+            },
+            "funding": [
+                {
+                    "url": "https://github.com/casperbakker",
+                    "type": "github"
+                }
+            ],
+            "install-path": "../picqer/php-barcode-generator"
+        }
+    ],
+    "dev": true,
+    "dev-package-names": []
+}

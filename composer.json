@@ -1,0 +1,6 @@
+{
+    "require": {
+        "aditum-payments/aditum-api-sdk-php": "^2.7",
+        "picqer/php-barcode-generator": "^2.2"
+    }
+}
