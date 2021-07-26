@@ -30,6 +30,17 @@ function child_plugin_activate() {
 	}
 }
 
+add_action( 'wp_enqueue_scripts', 'aditum_scripts_method' );
+/**
+ * Enqueue a script with jQuery as a dependency.
+ */
+function aditum_scripts_method() {
+	wp_enqueue_script( 'jquerymask', plugins_url() . '/aditum-boleto-gateway/assets/js/jquery.mask.js', array( 'jquery'), '1.0', false );
+	wp_enqueue_script( 'main-scripts', plugins_url() . '/aditum-boleto-gateway/assets/js/app.js', array(), '1.0', false );
+	//wp_enqueue_script( 'app-aditum', plugins_url() . '/aditum-boleto-gateway/assets/js/app.js', array( 'jquery', 'jquerymask' ), '1.0', true );
+}
+
+
  // ! add gateway class and register with woocommerce
 add_action( 'plugins_loaded', 'aditum_gateways_init', 0 );
 function aditum_gateways_init() {
@@ -185,12 +196,20 @@ add_filter( 'woocommerce_gateway_description', 'gateway_aditum_card_custom_field
 function gateway_aditum_card_custom_fields( $description, $payment_id ) {
 	if ( 'aditum_card' === $payment_id ) {
 
-		wp_enqueue_script( 'jquerymask' );
-		wp_enqueue_script( 'app_aditum' );
-
 		ob_start(); // Start buffering
 
 		echo '<div  class="aditum-card-fields" style="padding:10px 0;">';
+
+		woocommerce_form_field(
+			'card_holder_name',
+			array(
+				'type'     => 'text',
+				'label'    => __( 'Nome do Proprietário do cartão', 'woocommerce' ),
+				'class'    => array( 'form-row-wide' ),
+				'required' => true,
+			),
+			''
+		);
 
 		woocommerce_form_field(
 			'aditum_card_number',
@@ -262,16 +281,6 @@ function aditum_get_card_brand( $bin ) {
 	wp_send_json( $array_result );
 	// ! Don't forget to stop execution afterward.
 	wp_die();
-}
-
-
-add_action( 'wp_enqueue_scripts', 'aditum_scripts_method' );
-/**
- * Enqueue a script with jQuery as a dependency.
- */
-function aditum_scripts_method() {
-	wp_enqueue_script( 'jquerymask', plugins_url() . '/aditum-boleto-gateway/assets/js/jquery.mask.js', array( 'jquery' ), '1.0', true );
-	wp_enqueue_script( 'app-aditum', plugins_url() . '/aditum-boleto-gateway/assets/js/app.js', array( 'jquerymask' ), '1.0', true );
 }
 
 add_option( 'woocommerce_pay_page_id', get_option( 'woocommerce_thanks_page_id' ) );

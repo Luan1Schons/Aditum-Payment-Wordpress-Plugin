@@ -1,4 +1,7 @@
 <?php
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
 /**
  * Class Init WooCommerce Gateway
  */
@@ -206,12 +209,33 @@ class WC_Aditum_Card_Pay_Gateway extends WC_Payment_Gateway {
 		}
 	}
 
+	public function validateInputs( $data ) {
+
+		$keys  = array(
+			'card_holder_name',
+			'aditum_card_number',
+			'aditum_card_cvv',
+			'aditum_card_expiration_month',
+			'aditum_card_year_month',
+		);
+		foreach ( $data as $key => $input ) {
+			if ( in_array( $key, $keys ) ) {
+				if ( empty( $data[ $key ] ) ) {
+					return false;
+				}
+			}
+		}
+		
+		return true;
+
+	}
 	/**
 	 * Process_payment method.
 	 *
 	 * @param int $order_id Id of order.
 	 */
 	public function process_payment( $order_id ) {
+
 		global $woocommerce;
 		$order = new WC_Order( $order_id );
 
@@ -219,23 +243,58 @@ class WC_Aditum_Card_Pay_Gateway extends WC_Payment_Gateway {
 		AditumPayments\ApiSDK\Configuration::setUrl( AditumPayments\ApiSDK\Configuration::DEV_URL );
 		AditumPayments\ApiSDK\Configuration::setCnpj( $this->merchant_cnpj );
 		AditumPayments\ApiSDK\Configuration::setMerchantToken( $this->merchant_key );
-		AditumPayments\ApiSDK\Configuration::setlog( true );
+		AditumPayments\ApiSDK\Configuration::setlog( false );
 		AditumPayments\ApiSDK\Configuration::login();
+
+		if ( ! $this->validateInputs( $_POST ) ) {
+			return wc_add_notice( 'Preencha todos os campos do cartão de crédito.', 'error' );
+		}else{
+			$data = wp_unslash( $_POST) ;
+		}
+
+		$gateway = new AditumPayments\ApiSDK\Gateway;
+		$authorization = new AditumPayments\ApiSDK\Domains\Authorization;
 
 		$customer_phone_area_code = substr( $order->get_billing_phone(), 0, 2 );
 		$customer_phone           = substr( $order->get_billing_phone(), 2 );
+		$amount                   = str_replace( '.', '', $order->get_total() );
 
-		$gateway       = new AditumPayments\ApiSDK\Gateway();
-		$authorization = new AditumPayments\ApiSDK\Domains\Authorization();
+		/*
+		$brand_name = AditumPayments\ApiSDK\Helper\Utils::getBrandCardBin( wp_unslash( $_POST['aditum_card_number'] ) );
+		if ( null === $brand_name ) {
+			return wc_add_notice( 'Não foi possível encontrar a bandeira do cartão.', 'error' );
+		} else {
+			if ( isset( $brand_name['status'] ) && $brand_name['status'] === 1 ) {
+				$brand_name = $brand_name['brand'];
+			} else {
+				return wc_add_notice( 'Não foi possível encontrar a bandeira do cartão.', 'error' );
+			}
+		}
+		*/
 
 		// ! Customer
-		$authorization->customer->setName( 'ceres' );
-		$authorization->customer->setEmail( 'ceres@aditum.co' );
+		$authorization->customer->setName( $order->get_billing_first_name() . ' ' . $order->get_billing_last_name() );
+		$authorization->customer->setEmail( $order->get_billing_email() );
+		$authorization->customer->setId( "$order_id" );
+		if ( strlen( $order->get_meta( '_billing_cpf' ) ) === 14 ) {
+
+			$authorization->customer->setDocumentType( AditumPayments\ApiSDK\Enum\DocumentType::CNPJ );
+
+			$cpf = str_replace( '.', '', $order->get_meta( '_billing_cpf' ) );
+			$cpf = str_replace( '-', '', $cpf );
+			$authorization->customer->setDocument( $this->merchant_cnpj );
+		} else {
+			$authorization->customer->setDocumentType( AditumPayments\ApiSDK\Enum\DocumentType::CNPJ );
+
+			$cnpj = str_replace( '.', '', $order->get_meta( '_billing_cnpj' ) );
+			$cnpj = str_replace( '-', '', $cnpj );
+			$authorization->customer->setDocument( $this->merchant_cnpj );
+		}
 
 		// ! Customer->address
-		$authorization->customer->address->setStreet( $this->get_option( 'def_endereco_rua' ) );
-		$authorization->customer->address->setNumber( $this->get_option( 'def_endereco_numero' ) );
-		$authorization->customer->address->setNeighborhood( $this->get_option( 'def_endereco_bairro' ) );
+		$authorization->customer->address->setStreet( $order->get_meta( $this->get_option( 'def_endereco_rua' ) ) );
+		$authorization->customer->address->setNumber( $order->get_meta( $this->get_option( 'def_endereco_numero' ) ) );
+		$authorization->customer->address->setNeighborhood( $order->get_meta( $this->get_option( 'def_endereco_bairro' ) ) );
 		$authorization->customer->address->setCity( $order->get_billing_city() );
 		$authorization->customer->address->setState( $order->get_billing_state() );
 		$authorization->customer->address->setCountry( $order->get_billing_country() );
@@ -249,45 +308,43 @@ class WC_Aditum_Card_Pay_Gateway extends WC_Payment_Gateway {
 		$authorization->customer->phone->setType( AditumPayments\ApiSDK\Enum\PhoneType::MOBILE );
 
 		// ! Transactions
-		$authorization->transactions->setAmount( 100 );
+		$authorization->transactions->setAmount( $amount );
 		$authorization->transactions->setPaymentType( AditumPayments\ApiSDK\Enum\PaymentType::CREDIT );
 		$authorization->transactions->setInstallmentNumber( 2 ); // Só pode ser maior que 1 se o tipo de transação for crédito.
-		$authorization->transactions->getAcquirer( AditumPayments\ApiSDK\Enum\AcquirerCode::SIMULADOR ); // Valor padrão AditumPayments\ApiSDK\AcquirerCode::ADITUM_ECOM
+		//$authorization->transactions->getAcquirer( AditumPayments\ApiSDK\Enum\AcquirerCode::SIMULADOR ); // Valor padrão AditumPayments\ApiSDK\AcquirerCode::ADITUM_ECOM
 
 		// ! Transactions->card
-		$authorization->transactions->card->setCardNumber( '5463373320417272' );
-		$authorization->transactions->card->setCVV( '879' );
-		$authorization->transactions->card->setCardholderName( 'CERES ROHANA' );
-		$authorization->transactions->card->setExpirationMonth( 10 );
-		$authorization->transactions->card->setExpirationYear( 2022 );
+		$authorization->transactions->card->setCardNumber( $data['aditum_card_number'] );
+		$authorization->transactions->card->setCVV( $data['aditum_card_cvv'] );
+		$authorization->transactions->card->setCardholderName( $data['card_holder_name'] );
+		$authorization->transactions->card->setExpirationMonth( $data['aditum_card_expiration_month'] );
+		$authorization->transactions->card->setExpirationYear( $data['aditum_card_year_month'] );
 
 		$res = $gateway->charge( $authorization );
 
-		echo "\n\nResposta:\n";
-		print_r( json_encode( $res ) );
-
 		if ( isset( $res['status'] ) ) {
-			if ( $res['status'] == AditumPayments\ApiSDK\Enum\ChargeStatus::AUTHORIZED ) {
-				echo "\n\nAprovado!\n";
+			if ( AditumPayments\ApiSDK\Enum\ChargeStatus::AUTHORIZED === $res['status'] ) {
+					// ! Mark as on-hold (we're awaiting the cheque)
+					$order->update_status( 'on-hold', __( 'Aguardando o pagamento do boleto', 'wc-aditum-card' ) );
+
+					// ! Remove cart
+					$woocommerce->cart->empty_cart();
+
+					// ! Return thankyou redirect
+					return array(
+						'result'   => 'success',
+						'redirect' => $this->get_return_url( $order ),
+					);
+			} else {
+				return wc_add_notice( $res['httpMsg'], 'error' );
 			}
 		} else {
-			if ( $res != null ) {
-				echo 'httStatus: ' . $res['httpStatus']
-				. "\n httpMsg: " . $res['httpMsg']
-				. "\n";
+			if ( $res !== null ) {
+				return wc_add_notice( $res['httpMsg'], 'error' );
 			}
 		}
-		// ! Mark as on-hold (we're awaiting the cheque)
-		$order->update_status( 'on-hold', __( 'Aguardando o pagamento do boleto', 'wc-aditum-card' ) );
 
-		// ! Remove cart
-		$woocommerce->cart->empty_cart();
-
-		// ! Return thankyou redirect
-		return array(
-			'result'   => 'success',
-			'redirect' => $this->get_return_url( $order ),
-		);
+		print_r( $res );
 	}
 
 	/**
