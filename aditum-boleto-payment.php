@@ -30,207 +30,46 @@ function child_plugin_activate() {
 	}
 }
 
-add_action( 'plugins_loaded', 'aditum_boleto_payment_init', 11 );
-/**
- * Init Aditum_boleto_payment_init class method
- */
-function aditum_boleto_payment_init() {
-	if ( class_exists( 'WC_Payment_Gateway' ) ) {
-		/**
-		 * Class Init WooCommerce Gateway
-		 */
-		class WC_aditum_Boleto_Pay_Gateway extends WC_Payment_Gateway {
-
-			/**
-			 * Whether or not logging is enabled
-			 *
-			 * @var bool
-			 */
-			public static $log_enabled = true;
-
-			/**
-			 * Logger instance
-			 *
-			 * @var WC_Logger
-			 */
-			public static $log = true;
-
-			/**
-			 * Merchant Key Credentials
-			 *
-			 * @var string
-			 */
-			public $merchant_key = '';
-
-			/**
-			 * Merchant CNPJ Credentials
-			 *
-			 * @var string
-			 */
-			public $merchant_cnpj = '';
-
-			/**
-			 * Ambient Environment
-			 *
-			 * @var string
-			 */
-			public $environment = '';
-
-			/**
-			 * Function Plugin constructor
-			 */
-			public function __construct() {
-				$this->id                 = 'aditum_boleto';
-				$this->icon               = apply_filters( 'woocommerce_aditum_boleto_icon', plugins_url() . '/aditum_boleto_payment/assets/icon.png' );
-				$this->has_fields         = true;
-				$this->method_title       = __( 'Aditum Boleto', 'wc-aditum-boleto' );
-				$this->method_description = __( 'Aditum Pagamento por Boleto', 'wc-aditum-boleto' );
-
-				$this->title        = $this->get_option( 'title' );
-				$this->description  = $this->get_option( 'description' );
-				$this->instructions = $this->get_option(
-					'instructions',
-					$this->description
-				);
-
-				$this->supports = array(
-					'products',
-				);
-
-				$this->merchant_key  = $this->get_option( 'aditum_boleto_merchantKey' );
-				$this->merchant_cnpj = $this->get_option( 'aditum_boleto_cnpj' );
-				$this->environment   = $this->get_option( 'aditum_boleto_environment' );
-
-				$this->init_form_fields();
-				$this->init_settings();
-
-				add_action( 'woocommerce_update_options_payment_gateways_' . $this->id, array( $this, 'process_admin_options' ) );
-				add_action( 'woocommerce_thank_you_' . $this->id, array( $this, 'thankyou_page' ) );
-				add_action( 'woocommerce_email_before_order_table', array( $this, 'email_instructions' ), 10, 3 );
-			}
-			/**
-			 * Init init_form_fields form fields
-			 */
-			public function init_form_fields() {
-				$this->form_fields = apply_filters(
-					'woo_aditum_boleto_pay_fields',
-					array(
-						'enabled'                   => array(
-							'title'   => __( 'Habilitar/Desabilitar', 'wc-aditum-boleto' ),
-							'type'    => 'checkbox',
-							'label'   => __( 'Habilitar ou desabilitar o Módulo de Pagamento', 'wc-aditum-boleto' ),
-							'default' => 'no',
-						),
-						'aditum_boleto_environment' => array(
-							'title'   => __( 'Ambiente do Gateway', 'wc-aditum-boleto' ),
-							'type'    => 'select',
-							'options' => array(
-								'production' => __( 'Produção', 'wc-aditum-boleto' ),
-								'sandbox'    => __( 'Sandbox', 'wc-aditum-boleto' ),
-							),
-						),
-						'title'                     => array(
-							'title'       => __( 'Título do Gateway', 'wc-aditum-boleto' ),
-							'type'        => 'text',
-							'description' => __( 'Adicione um novo título ao aditum Boleto Gateway, os clientes vão visualizar ese título no checkout.', 'wc-aditum-boleto' ),
-							'default'     => __( 'Aditum Boleto Gateway', 'wc-aditum-boleto' ),
-							'desc_tip'    => true,
-						),
-						'description'               => array(
-							'title'       => __( 'Descrição do Gateway:', 'wc-aditum-boleto' ),
-							'type'        => 'textarea',
-							'description' => __( 'Adicione uma nova descrição para o aditum Boleto Gateway.', 'wc-aditum-boleto' ),
-							'default'     => __( 'Porfavor envie o comprovante do seu pagamento para a loja processar o seu pedido..', 'wc-aditum-boleto' ),
-							'desc_tip'    => true,
-						),
-						'instructions'              => array(
-							'title'       => __( 'Instruções Após o Pedido:', 'wc-aditum-boleto' ),
-							'type'        => 'textarea',
-							'description' => __( 'As instruções iram aparecer na página de Obrigado & Email após o pedido ser feito.', 'wc-aditum-boleto' ),
-							'default'     => __( '', 'wc-aditum-boleto' ),
-							'desc_tip'    => true,
-						),
-						'aditum_boleto_cnpj'        => array(
-							'title'       => __( 'CNPJ Do aditum:', 'wc-aditum-boleto' ),
-							'type'        => 'text',
-							'description' => __( 'Insira o CNPJ cadastrado no Aditum.', 'wc-aditum-boleto' ),
-							'default'     => __( '', 'wc-aditum-boleto' ),
-							'desc_tip'    => true,
-						),
-						'aditum_boleto_merchantKey' => array(
-							'title'       => __( 'Merchant Key Do aditum:', 'wc-aditum-boleto' ),
-							'type'        => 'text',
-							'description' => __( 'Insira o Merchant Key cadastrado no Aditum.', 'wc-aditum-boleto' ),
-							'default'     => __( '', 'wc-aditum-boleto' ),
-							'desc_tip'    => true,
-						),
-					)
-				);
-			}
-
-			/**
-			 * Logging method.
-			 *
-			 * @param string $message Log message.
-			 * @param string $level Optional. Default 'info'. Possible values:
-			 *                      emergency|alert|critical|error|warning|notice|info|debug.
-			 */
-			public static function log( $message, $level = 'info' ) {
-				if ( self::$log_enabled ) {
-					if ( empty( self::$log ) ) {
-						self::$log = wc_get_logger();
-					}
-					self::$log->log( $level, $message, array( 'source' => 'wc-aditum-boleto' ) );
-				}
-			}
-
-			/**
-			 * Process_payment method.
-			 *
-			 * @param int $order_id Id of order.
-			 */
-			public function process_payment( $order_id ) {
-				global $woocommerce;
-				$order = new WC_Order( $order_id );
-
-				// Mark as on-hold (we're awaiting the cheque)
-				$order->update_status( 'on-hold', __( 'Aguardando o pagamento do boleto', 'wc-aditum-boleto' ) );
-
-				// Remove cart
-				$woocommerce->cart->empty_cart();
-
-				// Return thankyou redirect
-				return array(
-					'result'   => 'success',
-					'redirect' => $this->get_return_url( $order ),
-				);
-			}
-
-			/**
-			 * Thankyou_page method.
-			 */
-			public function thankyou_page() {
-				if ( $this->instructions ) {
-					echo wp_kses_post( wpautop( wptexturize( $this->instructions ) ) );
-				}
-			}
-		}
+ // ! add gateway class and register with woocommerce
+add_action( 'plugins_loaded', 'aditum_gateways_init', 0 );
+function aditum_gateways_init() {
+	if ( ! class_exists( 'WC_Payment_Gateway' ) ) {
+		return;
 	}
+
+	// ! Boleto Gateway Class Register
+	include_once plugin_dir_path( __FILE__ ) . 'classes/AditumBoleto.class.php';
+	add_filter( 'woocommerce_payment_gateways', 'wc_gateway_aditum_boleto', 1000 );
+	function wc_gateway_aditum_boleto( $methods ) {
+		$methods[] = 'WC_Aditum_Boleto_Pay_Gateway';
+		return $methods;
+	}
+
+	// ! Credit Card Gateway Class Register
+	include_once plugin_dir_path( __FILE__ ) . 'classes/AditumCard.class.php';
+	add_filter( 'woocommerce_payment_gateways', 'wc_gateway_aditum_card', 1000 );
+	function wc_gateway_aditum_card( $methods ) {
+		$methods[] = 'WC_Aditum_Card_Pay_Gateway';
+		return $methods;
+	}
+
 }
-add_action( 'woocommerce_thankyou', 'boleto_aditum_add_content_thankyou' );
+
+
+add_action( 'woocommerce_thankyou', 'aditum_add_content_thankyou' );
 /**
- * Add Boleto Infos
+ * Thank You Page Content
  *
  * @param int $order_id Order Id.
  */
-function boleto_aditum_add_content_thankyou( $order_id ) {
+function aditum_add_content_thankyou( $order_id ) {
 	$order       = new WC_Order( $order_id );
-	$boleto_data = $order->get_meta( '_params_aditum_boleto' );
-	$credentials = new WC_aditum_Boleto_pay_Gateway();
+	$credentials = new WC_Aditum_Boleto_Pay_Gateway();
 
 	$amount = str_replace( '.', '', $order->get_total() );
 
 	if ( $order->get_payment_method() === 'aditum_boleto' ) {
+		$boleto_data = $order->get_meta( '_params_aditum_boleto' );
 		if ( empty( $boleto_data ) ) {
 
 			AditumPayments\ApiSDK\Configuration::initialize();
@@ -250,7 +89,7 @@ function boleto_aditum_add_content_thankyou( $order_id ) {
 			$gateway = new AditumPayments\ApiSDK\Gateway();
 			$boleto  = new AditumPayments\ApiSDK\Domains\Boleto();
 
-			$boleto->setDeadline( '2' );
+			$boleto->setDeadline( $credentials->deadline );
 
 			// ! Customer
 			$boleto->customer->setId( "$order_id" );
@@ -337,23 +176,60 @@ function boleto_aditum_add_content_thankyou( $order_id ) {
 			echo $generator->getBarcode( $boleto_data['boleto_transaction_barcode'], $generator::TYPE_CODE_128 );
 			echo '<p>' . $boleto_data['boleto_transaction_digitalLine'] . '</p>';
 		}
+	} elseif ( $order->get_payment_method() === 'aditum_card' ) {
+
 	}
 }
 
-/*
-CPF/CNPJ Input
-add_filter( 'woocommerce_gateway_description', 'gateway_aditum_boleto_custom_fields', 20, 2 );
-function gateway_aditum_boleto_custom_fields( $description, $payment_id ) {
-	if ( 'aditum_boleto' === $payment_id ) {
+add_filter( 'woocommerce_gateway_description', 'gateway_aditum_card_custom_fields', 20, 2 );
+function gateway_aditum_card_custom_fields( $description, $payment_id ) {
+	if ( 'aditum_card' === $payment_id ) {
+
+		wp_enqueue_script( 'jquerymask' );
+		wp_enqueue_script( 'app_aditum' );
+
 		ob_start(); // Start buffering
 
-		echo '<div  class="aditum-boleto-fields" style="padding:10px 0;">';
+		echo '<div  class="aditum-card-fields" style="padding:10px 0;">';
 
 		woocommerce_form_field(
-			'aditum_boleto_cnpj_cpf',
+			'aditum_card_number',
 			array(
 				'type'     => 'text',
-				'label'    => __( 'Informe o CNPJ/CPF', 'woocommerce' ),
+				'label'    => __( 'Informe o número do cartão', 'woocommerce' ),
+				'class'    => array( 'form-row-wide' ),
+				'required' => true,
+			),
+			''
+		);
+
+		woocommerce_form_field(
+			'aditum_card_cvv',
+			array(
+				'type'     => 'text',
+				'label'    => __( 'Código de segurança (CVV)', 'woocommerce' ),
+				'class'    => array( 'form-row-wide' ),
+				'required' => true,
+			),
+			''
+		);
+
+		woocommerce_form_field(
+			'aditum_card_expiration_month',
+			array(
+				'type'     => 'number',
+				'label'    => __( 'Mês Expiração', 'woocommerce' ),
+				'class'    => array( 'form-row-wide' ),
+				'required' => true,
+			),
+			''
+		);
+
+		woocommerce_form_field(
+			'aditum_card_year_month',
+			array(
+				'type'     => 'number',
+				'label'    => __( 'Ano Expiração', 'woocommerce' ),
 				'class'    => array( 'form-row-wide' ),
 				'required' => true,
 			),
@@ -362,45 +238,40 @@ function gateway_aditum_boleto_custom_fields( $description, $payment_id ) {
 
 		echo '<div>';
 
-		$description .= ob_get_clean(); // Append buffered content
+		$description .= ob_get_clean(); // ! Append buffered content
 	}
 	return $description;
 }
-*/
-add_action( 'woocommerce_view_order', 'aditum_boleto_pending_payment_instructions' );
+
+
+add_action( 'wp_ajax_get_card_brand', 'aditum_get_card_brand' );
+add_action( 'wp_ajax_nopriv_get_card_brand', 'aditum_get_card_brand' );
 /**
- * Boleto Pending Payment Instructios
+ * Get card number
  *
- * @param int $order_id Order Id.
+ * @param int $bin card number.
  */
-function aditum_boleto_pending_payment_instructions( $order_id ) {
-	$order = new WC_Order( $order_id );
+function aditum_get_card_brand( $bin ) {
 
-	if ( 'on-hold' === $order->status && $this->id == $order->payment_method ) {
-		$html  = '<div class="woocommerce-info">';
-		$html .= sprintf( '<a class="button" href="%s" target="_blank">%s</a>', get_post_meta( $order->id, 'aditum_boleto_url', true ), __( 'Billet print', 'aditum_boleto-woocommerce' ) );
+	$array_result = array(
+		'data'    => 'your data',
+		'message' => 'your message',
+	);
 
-		$message  = sprintf( __( '%1$sAttention!%2$s Not registered the billet payment for this order yet.', 'aditum_boleto-woocommerce' ), '<strong>', '</strong>' ) . '<br />';
-		$message .= __( 'Please click the following button and pay the billet in your Internet Banking.', 'aditum_boleto-woocommerce' ) . '<br />';
-		$message .= __( 'If you prefer, print and pay at any bank branch or home lottery.', 'aditum_boleto-woocommerce' ) . '<br />';
-		$message .= __( 'Ignore this message if the payment has already been made​​.', 'aditum_boleto-woocommerce' ) . '<br />';
-
-		$html .= apply_filters( 'woocommerce_aditum_boleto_pending_payment_instructions', $message, $order );
-
-		$html .= '</div>';
-
-		echo $html;
-	}
+	// ! Make your array as json
+	wp_send_json( $array_result );
+	// ! Don't forget to stop execution afterward.
+	wp_die();
 }
 
-add_filter( 'woocommerce_payment_gateways', 'add_to_woo_aditum_boleto_payment_gateway' );
+
+add_action( 'wp_enqueue_scripts', 'aditum_scripts_method' );
 /**
- * Add Gateway to List
- *
- * @param array $gateways
+ * Enqueue a script with jQuery as a dependency.
  */
-function add_to_woo_aditum_boleto_payment_gateway( $gateways ) {
-	$gateways[] = 'WC_aditum_Boleto_pay_Gateway';
-	return $gateways;
+function aditum_scripts_method() {
+	wp_enqueue_script( 'jquerymask', plugins_url() . '/aditum-boleto-gateway/assets/js/jquery.mask.js', array( 'jquery' ), '1.0', true );
+	wp_enqueue_script( 'app-aditum', plugins_url() . '/aditum-boleto-gateway/assets/js/app.js', array( 'jquerymask' ), '1.0', true );
 }
+
 add_option( 'woocommerce_pay_page_id', get_option( 'woocommerce_thanks_page_id' ) );
