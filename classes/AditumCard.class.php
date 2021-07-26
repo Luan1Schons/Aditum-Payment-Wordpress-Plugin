@@ -1,7 +1,7 @@
 <?php
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
+ini_set( 'display_errors', 1 );
+ini_set( 'display_startup_errors', 1 );
+error_reporting( E_ALL );
 /**
  * Class Init WooCommerce Gateway
  */
@@ -82,7 +82,6 @@ class WC_Aditum_Card_Pay_Gateway extends WC_Payment_Gateway {
 		$this->merchant_cnpj  = $this->get_option( 'aditum_card_cnpj' );
 		$this->environment    = $this->get_option( 'aditum_card_environment' );
 		$this->initial_status = $this->get_option( 'aditum_boleto_initial_status' );
-		$this->deadline       = $this->get_option( 'aditum_boleto_deadline_boleto' );
 
 		$this->init_form_fields();
 		$this->init_settings();
@@ -97,20 +96,20 @@ class WC_Aditum_Card_Pay_Gateway extends WC_Payment_Gateway {
 	public function init_form_fields() {
 
 		$inputs_address = array();
-		$wc_address     = WC()->countries->get_address_fields( $country = '', $type = '_billing' );
+		$wc_address     = WC()->countries->get_address_fields( $country = '', $type = '_billing_' );
 		foreach ( $wc_address as $key => $address ) {
 			$inputs_address[ $key ] = $key;
 		}
 		$this->form_fields = apply_filters(
 			'woo_aditum_card_pay_fields',
 			array(
-				'enabled'                     => array(
+				'enabled'                    => array(
 					'title'   => __( 'Habilitar/Desabilitar', 'wc-aditum_card' ),
 					'type'    => 'checkbox',
 					'label'   => __( 'Habilitar ou desabilitar o Módulo de Pagamento', 'wc-aditum_card' ),
 					'default' => 'no',
 				),
-				'aditum_card_environment'     => array(
+				'aditum_card_environment'    => array(
 					'title'   => __( 'Ambiente do Gateway', 'wc-aditum_card' ),
 					'type'    => 'select',
 					'options' => array(
@@ -118,35 +117,27 @@ class WC_Aditum_Card_Pay_Gateway extends WC_Payment_Gateway {
 						'sandbox'    => __( 'Sandbox', 'wc-aditum_card' ),
 					),
 				),
-				'title'                       => array(
+				'title'                      => array(
 					'title'       => __( 'Título do Gateway', 'wc-aditum_card' ),
 					'type'        => 'text',
 					'description' => __( 'Adicione um novo título ao aditum Boleto Gateway, os clientes vão visualizar ese título no checkout.', 'wc-aditum_card' ),
 					'default'     => __( 'Aditum Boleto Gateway', 'wc-aditum_card' ),
 					'desc_tip'    => true,
 				),
-				'description'                 => array(
+				'description'                => array(
 					'title'       => __( 'Descrição do Gateway:', 'wc-aditum_card' ),
 					'type'        => 'textarea',
 					'description' => __( 'Adicione uma nova descrição para o aditum Boleto Gateway.', 'wc-aditum_card' ),
 					'default'     => __( 'Porfavor envie o comprovante do seu pagamento para a loja processar o seu pedido..', 'wc-aditum_card' ),
 					'desc_tip'    => true,
 				),
-				'instructions'                => array(
+				'instructions'               => array(
 					'title'       => __( 'Instruções Após o Pedido:', 'wc-aditum_card' ),
 					'type'        => 'textarea',
 					'description' => __( 'As instruções iram aparecer na página de Obrigado & Email após o pedido ser feito.', 'wc-aditum_card' ),
-					'default'     => __( '', 'wc-aditum_card' ),
 					'desc_tip'    => true,
 				),
-				'aditum_card_deadline_boleto' => array(
-					'title'       => __( 'Tempo de expiração do boleto (Dias)', 'wc-aditum_card' ),
-					'type'        => 'number',
-					'description' => __( 'Tempo de expiração do boleto.', 'wc-aditum_card' ),
-					'default'     => __( '2', 'wc-aditum_card' ),
-					'desc_tip'    => true,
-				),
-				'aditum_card_initial_status'  => array(
+				'aditum_card_initial_status' => array(
 					'title'       => __( 'Status do Pedido criado', 'wc-aditum_card' ),
 					'type'        => 'select',
 					'options'     => wc_get_order_statuses(),
@@ -154,36 +145,34 @@ class WC_Aditum_Card_Pay_Gateway extends WC_Payment_Gateway {
 					'default'     => __( '2', 'wc-aditum_card' ),
 					'desc_tip'    => true,
 				),
-				'aditum_card_cnpj'            => array(
+				'aditum_card_cnpj'           => array(
 					'title'       => __( 'CNPJ Do aditum:', 'wc-aditum_card' ),
 					'type'        => 'text',
 					'description' => __( 'Insira o CNPJ cadastrado no Aditum.', 'wc-aditum_card' ),
-					'default'     => __( '', 'wc-aditum_card' ),
 					'desc_tip'    => true,
 				),
-				'aditum_card_merchantKey'     => array(
+				'aditum_card_merchantKey'    => array(
 					'title'       => __( 'Merchant Key Do aditum:', 'wc-aditum_card' ),
 					'type'        => 'text',
 					'description' => __( 'Insira o Merchant Key cadastrado no Aditum.', 'wc-aditum_card' ),
-					'default'     => __( '', 'wc-aditum_card' ),
 					'desc_tip'    => true,
 				),
-				'def_endereco_rua'            => array(
+				'def_endereco_rua'           => array(
 					'title'   => __( 'Definições do Endereço - Rua:', 'wc-aditum_card' ),
 					'type'    => 'select',
 					'options' => $inputs_address,
 				),
-				'def_endereco_numero'         => array(
+				'def_endereco_numero'        => array(
 					'title'   => __( 'Definições do Endereço - Número:', 'wc-aditum_card' ),
 					'type'    => 'select',
 					'options' => $inputs_address,
 				),
-				'def_endereco_comp'           => array(
+				'def_endereco_comp'          => array(
 					'title'   => __( 'Definições do Endereço - Complemento:', 'wc-aditum_card' ),
 					'type'    => 'select',
 					'options' => $inputs_address,
 				),
-				'def_endereco_bairro'         => array(
+				'def_endereco_bairro'        => array(
 					'title'   => __( 'Definições do Endereço - Bairro:', 'wc-aditum_card' ),
 					'type'    => 'select',
 					'options' => $inputs_address,
@@ -211,7 +200,7 @@ class WC_Aditum_Card_Pay_Gateway extends WC_Payment_Gateway {
 
 	public function validateInputs( $data ) {
 
-		$keys  = array(
+		$keys = array(
 			'card_holder_name',
 			'aditum_card_number',
 			'aditum_card_cvv',
@@ -225,7 +214,7 @@ class WC_Aditum_Card_Pay_Gateway extends WC_Payment_Gateway {
 				}
 			}
 		}
-		
+
 		return true;
 
 	}
@@ -238,39 +227,40 @@ class WC_Aditum_Card_Pay_Gateway extends WC_Payment_Gateway {
 
 		global $woocommerce;
 		$order = new WC_Order( $order_id );
+		// echo $this->get_option( 'def_endereco_rua' );
+		$address_1 = str_replace( '_billing_', '', $this->get_option( 'def_endereco_rua' ) );
+		$address_2 = str_replace( '_billing_', '', $this->get_option( 'def_endereco_comp' ) );
+		$address_city = str_replace( '_billing_', '', $this->get_option( 'def_endereco_bairro' ) );
 
+		//var_dump($order->get_data()['billing']);
+		// var_dump($order->get_meta($this->get_option( 'def_endereco_rua' )));
+		// var_dump( $order );
+
+		//echo $order->get_billing_state();
+		//echo '<br>';
+		//echo $order->get_billing_postcode();
+		//echo '<br>';
+		//echo $order->get_billing_country();
+		//wp_die();
 		AditumPayments\ApiSDK\Configuration::initialize();
 		AditumPayments\ApiSDK\Configuration::setUrl( AditumPayments\ApiSDK\Configuration::DEV_URL );
 		AditumPayments\ApiSDK\Configuration::setCnpj( $this->merchant_cnpj );
 		AditumPayments\ApiSDK\Configuration::setMerchantToken( $this->merchant_key );
-		AditumPayments\ApiSDK\Configuration::setlog( false );
+		AditumPayments\ApiSDK\Configuration::setlog( true );
 		AditumPayments\ApiSDK\Configuration::login();
 
 		if ( ! $this->validateInputs( $_POST ) ) {
 			return wc_add_notice( 'Preencha todos os campos do cartão de crédito.', 'error' );
-		}else{
-			$data = wp_unslash( $_POST) ;
+		} else {
+			$data = wp_unslash( $_POST );
 		}
 
-		$gateway = new AditumPayments\ApiSDK\Gateway;
-		$authorization = new AditumPayments\ApiSDK\Domains\Authorization;
+		$gateway       = new AditumPayments\ApiSDK\Gateway();
+		$authorization = new AditumPayments\ApiSDK\Domains\Authorization();
 
 		$customer_phone_area_code = substr( $order->get_billing_phone(), 0, 2 );
 		$customer_phone           = substr( $order->get_billing_phone(), 2 );
 		$amount                   = str_replace( '.', '', $order->get_total() );
-
-		/*
-		$brand_name = AditumPayments\ApiSDK\Helper\Utils::getBrandCardBin( wp_unslash( $_POST['aditum_card_number'] ) );
-		if ( null === $brand_name ) {
-			return wc_add_notice( 'Não foi possível encontrar a bandeira do cartão.', 'error' );
-		} else {
-			if ( isset( $brand_name['status'] ) && $brand_name['status'] === 1 ) {
-				$brand_name = $brand_name['brand'];
-			} else {
-				return wc_add_notice( 'Não foi possível encontrar a bandeira do cartão.', 'error' );
-			}
-		}
-		*/
 
 		// ! Customer
 		$authorization->customer->setName( $order->get_billing_first_name() . ' ' . $order->get_billing_last_name() );
@@ -292,14 +282,14 @@ class WC_Aditum_Card_Pay_Gateway extends WC_Payment_Gateway {
 		}
 
 		// ! Customer->address
-		$authorization->customer->address->setStreet( $order->get_meta( $this->get_option( 'def_endereco_rua' ) ) );
-		$authorization->customer->address->setNumber( $order->get_meta( $this->get_option( 'def_endereco_numero' ) ) );
-		$authorization->customer->address->setNeighborhood( $order->get_meta( $this->get_option( 'def_endereco_bairro' ) ) );
-		$authorization->customer->address->setCity( $order->get_billing_city() );
+		$authorization->customer->address->setStreet( $order->get_data()['billing'][ $address_1 ] );
+		$authorization->customer->address->setNumber( $order->get_meta( '_billing_number' ) );
+		$authorization->customer->address->setNeighborhood( $order->get_data()['billing'][ $address_city ]  );
+		$authorization->customer->address->setCity( $order->get_data()['billing'][ $address_city ] );
 		$authorization->customer->address->setState( $order->get_billing_state() );
 		$authorization->customer->address->setCountry( $order->get_billing_country() );
-		$authorization->customer->address->setZipcode( $order->get_billing_postcode() );
-		$authorization->customer->address->setComplement( '' );
+		$authorization->customer->address->setZipcode( str_replace('-', '', $order->get_billing_postcode() ) );
+		$authorization->customer->address->setComplement( $order->get_data()['billing'][ $address_2 ] );
 
 		// ! Customer->phone
 		$authorization->customer->phone->setCountryCode( '55' );
@@ -311,17 +301,19 @@ class WC_Aditum_Card_Pay_Gateway extends WC_Payment_Gateway {
 		$authorization->transactions->setAmount( $amount );
 		$authorization->transactions->setPaymentType( AditumPayments\ApiSDK\Enum\PaymentType::CREDIT );
 		$authorization->transactions->setInstallmentNumber( 2 ); // Só pode ser maior que 1 se o tipo de transação for crédito.
-		//$authorization->transactions->getAcquirer( AditumPayments\ApiSDK\Enum\AcquirerCode::SIMULADOR ); // Valor padrão AditumPayments\ApiSDK\AcquirerCode::ADITUM_ECOM
 
 		// ! Transactions->card
-		$authorization->transactions->card->setCardNumber( $data['aditum_card_number'] );
+		$authorization->transactions->card->setCardNumber( str_replace( ' ', '', $data['aditum_card_number'] ) );
 		$authorization->transactions->card->setCVV( $data['aditum_card_cvv'] );
 		$authorization->transactions->card->setCardholderName( $data['card_holder_name'] );
 		$authorization->transactions->card->setExpirationMonth( $data['aditum_card_expiration_month'] );
-		$authorization->transactions->card->setExpirationYear( $data['aditum_card_year_month'] );
+		$authorization->transactions->card->setExpirationYear( 20 + $data['aditum_card_year_month'] );
 
 		$res = $gateway->charge( $authorization );
 
+		print_r( $res );
+
+		wp_die();
 		if ( isset( $res['status'] ) ) {
 			if ( AditumPayments\ApiSDK\Enum\ChargeStatus::AUTHORIZED === $res['status'] ) {
 					// ! Mark as on-hold (we're awaiting the cheque)

@@ -95,7 +95,7 @@ class WC_Aditum_Boleto_Pay_Gateway extends WC_Payment_Gateway {
 		// var_dump(WC()->countries->get_address_fields( $country = '', $type = '_billing'));
 		// exit();
 		$inputs_address = array();
-		$wc_address     = WC()->countries->get_address_fields( $country = '', $type = '_billing' );
+		$wc_address     = WC()->countries->get_address_fields( $country = '', $type = '_billing_' );
 		foreach ( $wc_address as $key => $address ) {
 			$inputs_address[ $key ] = $key;
 		}
