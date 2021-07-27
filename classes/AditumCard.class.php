@@ -319,14 +319,14 @@ class WC_Aditum_Card_Pay_Gateway extends WC_Payment_Gateway {
 					// ! Return thankyou redirect
 					return array(
 						'result'   => 'success',
-						'redirect' => $this->get_return_url( $order ),
+						'redirect' => $this->get_return_url( $order )
 					); 
 
 			} else {
 				return wc_add_notice( $res['charge']->transactions[0]->errorMessage, 'error' );
 			}
 		} else {
-			if ( $res !== null ) {
+			if ( null !== $res ) {
 				return wc_add_notice( $res['httpMsg'], 'error' );
 			}
 		}
