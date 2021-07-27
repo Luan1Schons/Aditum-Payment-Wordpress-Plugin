@@ -1,4 +1,11 @@
 <?php
+/**
+ * Aditum Gateway Payment Card Class
+ * Description: Card Class
+ *
+ * @package Aditum/Payments
+ */
+
 ini_set( 'display_errors', 1 );
 ini_set( 'display_startup_errors', 1 );
 error_reporting( E_ALL );
@@ -258,7 +265,7 @@ class WC_Aditum_Card_Pay_Gateway extends WC_Payment_Gateway {
 		$authorization->customer->setName( $order->get_billing_first_name() . ' ' . $order->get_billing_last_name() );
 		$authorization->customer->setEmail( $order->get_billing_email() );
 		$authorization->customer->setId( "$order_id" );
-		
+
 		if ( strlen( $order->get_meta( '_billing_cpf' ) ) === 14 ) {
 
 			$authorization->customer->setDocumentType( AditumPayments\ApiSDK\Enum\DocumentType::CNPJ );
@@ -267,13 +274,12 @@ class WC_Aditum_Card_Pay_Gateway extends WC_Payment_Gateway {
 			$cpf = str_replace( '-', '', $cpf );
 			$authorization->customer->setDocument( $this->merchant_cnpj );
 		} else {
-			$authorization->customer->setDocumentType( AditumPayments\ApiSDK\Enum\DocumentType::CNPJ  );
+			$authorization->customer->setDocumentType( AditumPayments\ApiSDK\Enum\DocumentType::CNPJ );
 
 			$cnpj = str_replace( '.', '', $order->get_meta( '_billing_cnpj' ) );
 			$cnpj = str_replace( '-', '', $cnpj );
 			$authorization->customer->setDocument( $this->merchant_cnpj );
 		}
-
 
 		// ! Customer->address
 
@@ -285,7 +291,6 @@ class WC_Aditum_Card_Pay_Gateway extends WC_Payment_Gateway {
 		$authorization->customer->address->setCountry( $order->get_billing_country() );
 		$authorization->customer->address->setZipcode( str_replace( '-', '', $order->get_billing_postcode() ) );
 		$authorization->customer->address->setComplement( $order->get_data()['billing'][ $address_2 ] );
-	
 
 		// ! Customer->phone
 		$authorization->customer->phone->setCountryCode( '55' );
@@ -297,7 +302,7 @@ class WC_Aditum_Card_Pay_Gateway extends WC_Payment_Gateway {
 		$authorization->transactions->setAmount( $amount );
 		$authorization->transactions->setPaymentType( AditumPayments\ApiSDK\Enum\PaymentType::CREDIT );
 		$authorization->transactions->setInstallmentNumber( 2 ); // Só pode ser maior que 1 se o tipo de transação for crédito.
-	
+
 		// ! Transactions->card
 		$authorization->transactions->card->setCardNumber( str_replace( ' ', '', $data['aditum_card_number'] ) );
 		$authorization->transactions->card->setCVV( $data['aditum_card_cvv'] );
@@ -306,8 +311,27 @@ class WC_Aditum_Card_Pay_Gateway extends WC_Payment_Gateway {
 		$authorization->transactions->card->setExpirationYear( 20 . $data['aditum_card_year_month'] );
 
 		$res = $gateway->charge( $authorization );
-
+		//echo '<pre>';
+		//print_r( $res );
+		//echo '</pre>';
+		//wp_die();
 		if ( isset( $res['status'] ) ) {
+
+			// ! Insert params to metadata
+			$order->update_meta_data(
+				'_params_aditum_card',
+				array(
+					'order_id'                     => $order_id,
+					'card_chargeId'                => $res['charge']->id,
+					'card_chargeStatus'            => $res['charge']->chargeStatus,
+					'card_transaction_id'          => $res['charge']->transactions[0]->transactionId,
+					'card_transaction_amount'      => $res['charge']->transactions[0]->amount,
+					'card_transaction_transactionStatus' => $res['charge']->transactions[0]->transactionStatus,
+				)
+			);
+
+			$order->save();
+
 			if ( AditumPayments\ApiSDK\Enum\ChargeStatus::AUTHORIZED === $res['status'] ) {
 
 					// ! Mark as on-hold (we're awaiting the cheque)
@@ -319,8 +343,8 @@ class WC_Aditum_Card_Pay_Gateway extends WC_Payment_Gateway {
 					// ! Return thankyou redirect
 					return array(
 						'result'   => 'success',
-						'redirect' => $this->get_return_url( $order )
-					); 
+						'redirect' => $this->get_return_url( $order ),
+					);
 
 			} else {
 				return wc_add_notice( $res['charge']->transactions[0]->errorMessage, 'error' );

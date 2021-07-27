@@ -1,5 +1,12 @@
 <?php
 /**
+ * Aditum Gateway Payment Boleto Class
+ * Description: Boleto Class
+ *
+ * @package Aditum/Payments
+ */
+
+/**
  * Class Init WooCommerce Gateway
  */
 class WC_Aditum_Boleto_Pay_Gateway extends WC_Payment_Gateway {

@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Plugin Name:       Aditum Boleto Gateway
  * Plugin URI:        https://aditum.com.br/
