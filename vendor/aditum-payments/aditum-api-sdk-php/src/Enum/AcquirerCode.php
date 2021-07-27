@@ -16,4 +16,5 @@ abstract class AcquirerCode {
     public const SAFRAPAYTEF  = 11;
     public const VR_BENEFITS  = 12;
     public const SIMULADOR    = 999;
+
 }

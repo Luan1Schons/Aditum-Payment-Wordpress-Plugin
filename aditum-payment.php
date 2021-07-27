@@ -21,11 +21,13 @@ if ( ! in_array( 'woocommerce/woocommerce.php', apply_filters( 'active_plugins',
 }
 
 register_activation_hook( __FILE__, 'child_plugin_activate' );
+/**
+ * Dependency.
+ */
 function child_plugin_activate() {
-
-	// Require parent plugin
+	// ! Require parent plugin
 	if ( ! is_plugin_active( 'woocommerce-extra-checkout-fields-for-brazil/woocommerce-extra-checkout-fields-for-brazil.php' ) and current_user_can( 'activate_plugins' ) ) {
-		// Stop activation redirect and show error
+		// ! Stop activation redirect and show error
 		wp_die( 'Desculpe, mas este plugin requer que o plugin "Brazilian Market on WooCommerce" esteja instalado e ativo. <br><a href="' . admin_url( 'plugins.php' ) . '">&laquo; Voltar para os Plugins</a>' );
 	}
 }
@@ -35,14 +37,15 @@ add_action( 'wp_enqueue_scripts', 'aditum_scripts_method' );
  * Enqueue a script with jQuery as a dependency.
  */
 function aditum_scripts_method() {
-	wp_enqueue_script( 'jquerymask', plugins_url() . '/aditum-boleto-gateway/assets/js/jquery.mask.js', array( 'jquery'), '1.0', false );
+	wp_enqueue_script( 'jquerymask', plugins_url() . '/aditum-boleto-gateway/assets/js/jquery.mask.js', array( 'jquery' ), '1.0', false );
 	wp_enqueue_script( 'main-scripts', plugins_url() . '/aditum-boleto-gateway/assets/js/app.js', array(), '1.0', false );
-	//wp_enqueue_script( 'app-aditum', plugins_url() . '/aditum-boleto-gateway/assets/js/app.js', array( 'jquery', 'jquerymask' ), '1.0', true );
 }
 
 
- // ! add gateway class and register with woocommerce
 add_action( 'plugins_loaded', 'aditum_gateways_init', 0 );
+/**
+ * add gateway class and register with woocommerce
+ */
 function aditum_gateways_init() {
 	if ( ! class_exists( 'WC_Payment_Gateway' ) ) {
 		return;
@@ -193,10 +196,16 @@ function aditum_add_content_thankyou( $order_id ) {
 }
 
 add_filter( 'woocommerce_gateway_description', 'gateway_aditum_card_custom_fields', 20, 2 );
+/**
+ * Card Fields Checkout
+ *
+ * @param int $description Description.
+ * @param int $payment_id  Payment Id.
+ */
 function gateway_aditum_card_custom_fields( $description, $payment_id ) {
 	if ( 'aditum_card' === $payment_id ) {
 
-		ob_start(); // Start buffering
+		ob_start(); // ! Start buffering
 
 		echo '<div  class="aditum-card-fields" style="padding:10px 0;">';
 
@@ -221,6 +230,8 @@ function gateway_aditum_card_custom_fields( $description, $payment_id ) {
 			),
 			''
 		);
+
+		echo '<span id="card-brand"></span>';
 
 		woocommerce_form_field(
 			'aditum_card_cvv',
@@ -270,12 +281,40 @@ add_action( 'wp_ajax_nopriv_get_card_brand', 'aditum_get_card_brand' );
  *
  * @param int $bin card number.
  */
-function aditum_get_card_brand( $bin ) {
+function aditum_get_card_brand() {
 
-	$array_result = array(
-		'data'    => 'your data',
-		'message' => 'your message',
-	);
+	$data = wp_unslash( $_POST );
+
+	$credentials = new WC_Aditum_Card_Pay_Gateway();
+	AditumPayments\ApiSDK\Configuration::initialize();
+	if ( 'sandbox' === $credentials->environment ) {
+		AditumPayments\ApiSDK\Configuration::setUrl( AditumPayments\ApiSDK\Configuration::DEV_URL );
+	}
+	AditumPayments\ApiSDK\Configuration::setCnpj( $credentials->merchant_cnpj );
+	AditumPayments\ApiSDK\Configuration::setMerchantToken( $credentials->merchant_key );
+	AditumPayments\ApiSDK\Configuration::setlog( false );
+	AditumPayments\ApiSDK\Configuration::login();
+
+	$brand_name = AditumPayments\ApiSDK\Helper\Utils::getBrandCardBin( str_replace( ' ', '', $data['bin'] ) );
+
+	if ( $brand_name === null ) {
+		$array_result = array(
+			'status' => 'error',
+			'brand'  => 'null',
+		);
+	} else {
+		if ( true === $brand_name['status'] ) {
+			$array_result = array(
+				'status' => 'success',
+				'brand'  => $brand_name['brand'],
+			);
+		} else {
+			$array_result = array(
+				'status' => 'error',
+				'brand'  => 'null',
+			);
+		}
+	}
 
 	// ! Make your array as json
 	wp_send_json( $array_result );

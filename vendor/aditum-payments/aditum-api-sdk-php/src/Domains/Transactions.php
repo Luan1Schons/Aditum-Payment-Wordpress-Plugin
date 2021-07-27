@@ -10,6 +10,7 @@ class Transactions {
     private $paymentType = "";
     private $installmentNumber = 1;
     private $instructions = "";
+    private $acquirer = 999;
     
     public $card = NULL;
     public $fine = NULL;
@@ -51,5 +52,9 @@ class Transactions {
 
     public function getInstructions() {
         return $this->instructions;
+    }
+
+    public function getAcquirer(){
+        return $this->acquirer;
     }
 }

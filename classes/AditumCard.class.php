@@ -228,25 +228,25 @@ class WC_Aditum_Card_Pay_Gateway extends WC_Payment_Gateway {
 		global $woocommerce;
 		$order = new WC_Order( $order_id );
 		// echo $this->get_option( 'def_endereco_rua' );
-		$address_1 = str_replace( '_billing_', '', $this->get_option( 'def_endereco_rua' ) );
-		$address_2 = str_replace( '_billing_', '', $this->get_option( 'def_endereco_comp' ) );
+		$address_1    = str_replace( '_billing_', '', $this->get_option( 'def_endereco_rua' ) );
+		$address_2    = str_replace( '_billing_', '', $this->get_option( 'def_endereco_comp' ) );
 		$address_city = str_replace( '_billing_', '', $this->get_option( 'def_endereco_bairro' ) );
 
-		//var_dump($order->get_data()['billing']);
+		// var_dump($order->get_data()['billing']);
 		// var_dump($order->get_meta($this->get_option( 'def_endereco_rua' )));
 		// var_dump( $order );
 
-		//echo $order->get_billing_state();
-		//echo '<br>';
-		//echo $order->get_billing_postcode();
-		//echo '<br>';
-		//echo $order->get_billing_country();
-		//wp_die();
+		// echo $order->get_billing_state();
+		// echo '<br>';
+		// echo $order->get_billing_postcode();
+		// echo '<br>';
+		// echo $order->get_billing_country();
+		// wp_die();
 		AditumPayments\ApiSDK\Configuration::initialize();
 		AditumPayments\ApiSDK\Configuration::setUrl( AditumPayments\ApiSDK\Configuration::DEV_URL );
 		AditumPayments\ApiSDK\Configuration::setCnpj( $this->merchant_cnpj );
 		AditumPayments\ApiSDK\Configuration::setMerchantToken( $this->merchant_key );
-		AditumPayments\ApiSDK\Configuration::setlog( true );
+		AditumPayments\ApiSDK\Configuration::setlog( false );
 		AditumPayments\ApiSDK\Configuration::login();
 
 		if ( ! $this->validateInputs( $_POST ) ) {
@@ -266,6 +266,7 @@ class WC_Aditum_Card_Pay_Gateway extends WC_Payment_Gateway {
 		$authorization->customer->setName( $order->get_billing_first_name() . ' ' . $order->get_billing_last_name() );
 		$authorization->customer->setEmail( $order->get_billing_email() );
 		$authorization->customer->setId( "$order_id" );
+		
 		if ( strlen( $order->get_meta( '_billing_cpf' ) ) === 14 ) {
 
 			$authorization->customer->setDocumentType( AditumPayments\ApiSDK\Enum\DocumentType::CNPJ );
@@ -274,22 +275,25 @@ class WC_Aditum_Card_Pay_Gateway extends WC_Payment_Gateway {
 			$cpf = str_replace( '-', '', $cpf );
 			$authorization->customer->setDocument( $this->merchant_cnpj );
 		} else {
-			$authorization->customer->setDocumentType( AditumPayments\ApiSDK\Enum\DocumentType::CNPJ );
+			$authorization->customer->setDocumentType( AditumPayments\ApiSDK\Enum\DocumentType::CNPJ  );
 
 			$cnpj = str_replace( '.', '', $order->get_meta( '_billing_cnpj' ) );
 			$cnpj = str_replace( '-', '', $cnpj );
 			$authorization->customer->setDocument( $this->merchant_cnpj );
 		}
 
+
 		// ! Customer->address
+
 		$authorization->customer->address->setStreet( $order->get_data()['billing'][ $address_1 ] );
 		$authorization->customer->address->setNumber( $order->get_meta( '_billing_number' ) );
-		$authorization->customer->address->setNeighborhood( $order->get_data()['billing'][ $address_city ]  );
+		$authorization->customer->address->setNeighborhood( $order->get_data()['billing'][ $address_city ] );
 		$authorization->customer->address->setCity( $order->get_data()['billing'][ $address_city ] );
 		$authorization->customer->address->setState( $order->get_billing_state() );
 		$authorization->customer->address->setCountry( $order->get_billing_country() );
-		$authorization->customer->address->setZipcode( str_replace('-', '', $order->get_billing_postcode() ) );
+		$authorization->customer->address->setZipcode( str_replace( '-', '', $order->get_billing_postcode() ) );
 		$authorization->customer->address->setComplement( $order->get_data()['billing'][ $address_2 ] );
+	
 
 		// ! Customer->phone
 		$authorization->customer->phone->setCountryCode( '55' );
@@ -301,23 +305,23 @@ class WC_Aditum_Card_Pay_Gateway extends WC_Payment_Gateway {
 		$authorization->transactions->setAmount( $amount );
 		$authorization->transactions->setPaymentType( AditumPayments\ApiSDK\Enum\PaymentType::CREDIT );
 		$authorization->transactions->setInstallmentNumber( 2 ); // Só pode ser maior que 1 se o tipo de transação for crédito.
-
+	
 		// ! Transactions->card
 		$authorization->transactions->card->setCardNumber( str_replace( ' ', '', $data['aditum_card_number'] ) );
 		$authorization->transactions->card->setCVV( $data['aditum_card_cvv'] );
 		$authorization->transactions->card->setCardholderName( $data['card_holder_name'] );
 		$authorization->transactions->card->setExpirationMonth( $data['aditum_card_expiration_month'] );
-		$authorization->transactions->card->setExpirationYear( 20 + $data['aditum_card_year_month'] );
+		$authorization->transactions->card->setExpirationYear( 20 . $data['aditum_card_year_month'] );
 
 		$res = $gateway->charge( $authorization );
-
-		print_r( $res );
-
-		wp_die();
+		//echo '<pre>';
+		//print_r( $res );
+		//echo '</pre>';
+		//wp_die();
 		if ( isset( $res['status'] ) ) {
 			if ( AditumPayments\ApiSDK\Enum\ChargeStatus::AUTHORIZED === $res['status'] ) {
 					// ! Mark as on-hold (we're awaiting the cheque)
-					$order->update_status( 'on-hold', __( 'Aguardando o pagamento do boleto', 'wc-aditum-card' ) );
+					$order->update_status( 'completed', __( 'Pagamento Concluído', 'wc-aditum-card' ) );
 
 					// ! Remove cart
 					$woocommerce->cart->empty_cart();
@@ -326,17 +330,16 @@ class WC_Aditum_Card_Pay_Gateway extends WC_Payment_Gateway {
 					return array(
 						'result'   => 'success',
 						'redirect' => $this->get_return_url( $order ),
-					);
+					); 
+
 			} else {
-				return wc_add_notice( $res['httpMsg'], 'error' );
+				return wc_add_notice( $res['charge']->transactions[0]->errorMessage, 'error' );
 			}
 		} else {
 			if ( $res !== null ) {
 				return wc_add_notice( $res['httpMsg'], 'error' );
 			}
 		}
-
-		print_r( $res );
 	}
 
 	/**
