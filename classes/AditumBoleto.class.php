@@ -216,21 +216,110 @@ class WC_Aditum_Boleto_Pay_Gateway extends WC_Payment_Gateway {
 		global $woocommerce;
 		$order = new WC_Order( $order_id );
 
-		$order->update_status( $this->initial_status, __( 'Aguardando o pagamento do boleto', 'wc-aditum-boleto' ) );
+		$amount = str_replace( '.', '', $order->get_total() );
 
-		// ! Remove cart
-		$woocommerce->cart->empty_cart();
+		AditumPayments\ApiSDK\Configuration::initialize();
 
-		// ! Return thankyou redirect
-		return array(
-			'result'   => 'success',
-			'redirect' => $this->get_return_url( $order ),
-		);
+		if ( 'sandbox' === $this->environment ) {
+			AditumPayments\ApiSDK\Configuration::setUrl( AditumPayments\ApiSDK\Configuration::DEV_URL );
+		}
+
+		AditumPayments\ApiSDK\Configuration::setCnpj( $this->merchant_cnpj );
+		AditumPayments\ApiSDK\Configuration::setMerchantToken( $this->merchant_key );
+		AditumPayments\ApiSDK\Configuration::setlog( false );
+		AditumPayments\ApiSDK\Configuration::login();
+
+		$customer_phone_area_code = substr( $order->get_billing_phone(), 0, 2 );
+		$customer_phone           = substr( $order->get_billing_phone(), 2 );
+
+		$gateway = new AditumPayments\ApiSDK\Gateway();
+		$boleto  = new AditumPayments\ApiSDK\Domains\Boleto();
+
+		$boleto->setDeadline( $credentials->deadline );
+
+		// ! Customer
+		$boleto->customer->setId( "$order_id" );
+		$boleto->customer->setName( $order->get_billing_first_name() . ' ' . $order->get_billing_last_name() );
+		$boleto->customer->setEmail( $order->get_billing_email() );
+		if ( strlen( $order->get_meta( '_billing_cpf' ) ) === 14 ) {
+
+			$boleto->customer->setDocumentType( AditumPayments\ApiSDK\Enum\DocumentType::CNPJ );
+
+			$cpf = str_replace( '.', '', $order->get_meta( '_billing_cpf' ) );
+			$cpf = str_replace( '-', '', $cpf );
+			$boleto->customer->setDocument( $this->merchant_cnpj );
+		} else {
+			$boleto->customer->setDocumentType( AditumPayments\ApiSDK\Enum\DocumentType::CNPJ );
+
+			$cnpj = str_replace( '.', '', $order->get_meta( '_billing_cnpj' ) );
+			$cnpj = str_replace( '-', '', $cnpj );
+			$boleto->customer->setDocument( $this->merchant_cnpj );
+		}
+
+		// ! Customer->address
+		$boleto->customer->address->setStreet( $order->get_billing_address_1() );
+		$boleto->customer->address->setNumber( $order->get_meta( '_billing_number' ) );
+		$boleto->customer->address->setNeighborhood( $order->get_billing_city() );
+		$boleto->customer->address->setCity( $order->get_billing_city() );
+		$boleto->customer->address->setState( $order->get_billing_state() );
+		$boleto->customer->address->setCountry( $order->get_billing_country() );
+		$boleto->customer->address->setZipcode( $order->get_billing_postcode() );
+		$boleto->customer->address->setComplement( '' );
+
+		// ! Customer->phone
+		$boleto->customer->phone->setCountryCode( '55' );
+		$boleto->customer->phone->setAreaCode( $customer_phone_area_code );
+		$boleto->customer->phone->setNumber( $customer_phone );
+		$boleto->customer->phone->setType( AditumPayments\ApiSDK\Enum\PhoneType::MOBILE );
+
+		// ! Transactions
+		$boleto->transactions->setAmount( $amount );
+		$boleto->transactions->setInstructions( 'Crédito de teste' );
+
+		$res = $gateway->charge( $boleto );
+		if ( isset( $res['status'] ) ) {
+			if ( AditumPayments\ApiSDK\Enum\ChargeStatus::PRE_AUTHORIZED === $res['status'] ) {
+
+				// ! Insert params to metadata
+				$order->update_meta_data(
+					'_params_aditum_boleto',
+					array(
+						'order_id'                       => $order_id,
+						'boleto_chargeId'                => $res['charge']->id,
+						'boleto_chargeStatus'            => $res['charge']->chargeStatus,
+						'boleto_transaction_id'          => $res['charge']->transactions[0]->transactionId,
+						'boleto_transaction_barcode'     => $res['charge']->transactions[0]->barcode,
+						'boleto_transaction_digitalLine' => $res['charge']->transactions[0]->digitalLine,
+						'boleto_transaction_amount'      => $res['charge']->transactions[0]->amount,
+						'boleto_transaction_transactionStatus' => $res['charge']->transactions[0]->transactionStatus,
+						'boleto_transaction_bankSlipUrl' => $res['charge']->transactions[0]->bankSlipUrl,
+						'boleto_transaction_deadline'    => $res['charge']->transactions[0]->deadline,
+					)
+				);
+
+				$order->save();
+
+				$order->update_status( $this->initial_status, __( 'Aguardando o pagamento do boleto', 'wc-aditum-boleto' ) );
+
+				// ! Remove cart
+				$woocommerce->cart->empty_cart();
+
+				// ! Return thankyou redirect
+				return array(
+					'result'   => 'success',
+					'redirect' => $this->get_return_url( $order ),
+				);
+			}
+		} else {
+			if ( $res != null ) {
+				return wc_add_notice( $res['httpMsg'], 'error' );
+			}
+		}
 	}
 
-	/**
-	 * Thankyou_page method.
-	 */
+		/**
+		 * Thankyou_page method.
+		 */
 	public function thankyou_page() {
 		if ( $this->instructions ) {
 			echo wp_kses_post( wpautop( wptexturize( $this->instructions ) ) );

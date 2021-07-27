@@ -77,121 +77,22 @@ add_action( 'woocommerce_thankyou', 'aditum_add_content_thankyou' );
  * @param int $order_id Order Id.
  */
 function aditum_add_content_thankyou( $order_id ) {
-	$order       = new WC_Order( $order_id );
-	$credentials = new WC_Aditum_Boleto_Pay_Gateway();
-
-	$amount = str_replace( '.', '', $order->get_total() );
+	$order = new WC_Order( $order_id );
 
 	if ( $order->get_payment_method() === 'aditum_boleto' ) {
+
 		$boleto_data = $order->get_meta( '_params_aditum_boleto' );
-		if ( empty( $boleto_data ) ) {
 
-			AditumPayments\ApiSDK\Configuration::initialize();
+		if ( ! empty( $boleto_data ) ) {
 
-			if ( 'sandbox' === $credentials->environment ) {
-				AditumPayments\ApiSDK\Configuration::setUrl( AditumPayments\ApiSDK\Configuration::DEV_URL );
-			}
-
-			AditumPayments\ApiSDK\Configuration::setCnpj( $credentials->merchant_cnpj );
-			AditumPayments\ApiSDK\Configuration::setMerchantToken( $credentials->merchant_key );
-			AditumPayments\ApiSDK\Configuration::setlog( false );
-			AditumPayments\ApiSDK\Configuration::login();
-
-			$customer_phone_area_code = substr( $order->get_billing_phone(), 0, 2 );
-			$customer_phone           = substr( $order->get_billing_phone(), 2 );
-
-			$gateway = new AditumPayments\ApiSDK\Gateway();
-			$boleto  = new AditumPayments\ApiSDK\Domains\Boleto();
-
-			$boleto->setDeadline( $credentials->deadline );
-
-			// ! Customer
-			$boleto->customer->setId( "$order_id" );
-			$boleto->customer->setName( $order->get_billing_first_name() . ' ' . $order->get_billing_last_name() );
-			$boleto->customer->setEmail( $order->get_billing_email() );
-			if ( strlen( $order->get_meta( '_billing_cpf' ) ) === 14 ) {
-
-				$boleto->customer->setDocumentType( AditumPayments\ApiSDK\Enum\DocumentType::CNPJ );
-
-				$cpf = str_replace( '.', '', $order->get_meta( '_billing_cpf' ) );
-				$cpf = str_replace( '-', '', $cpf );
-				$boleto->customer->setDocument( $credentials->merchant_cnpj );
-			} else {
-				$boleto->customer->setDocumentType( AditumPayments\ApiSDK\Enum\DocumentType::CNPJ );
-
-				$cnpj = str_replace( '.', '', $order->get_meta( '_billing_cnpj' ) );
-				$cnpj = str_replace( '-', '', $cnpj );
-				$boleto->customer->setDocument( $credentials->merchant_cnpj );
-			}
-
-			// ! Customer->address
-			$boleto->customer->address->setStreet( $order->get_billing_address_1() );
-			$boleto->customer->address->setNumber( $order->get_meta( '_billing_number' ) );
-			$boleto->customer->address->setNeighborhood( $order->get_billing_city() );
-			$boleto->customer->address->setCity( $order->get_billing_city() );
-			$boleto->customer->address->setState( $order->get_billing_state() );
-			$boleto->customer->address->setCountry( $order->get_billing_country() );
-			$boleto->customer->address->setZipcode( $order->get_billing_postcode() );
-			$boleto->customer->address->setComplement( '' );
-
-			// ! Customer->phone
-			$boleto->customer->phone->setCountryCode( '55' );
-			$boleto->customer->phone->setAreaCode( $customer_phone_area_code );
-			$boleto->customer->phone->setNumber( $customer_phone );
-			$boleto->customer->phone->setType( AditumPayments\ApiSDK\Enum\PhoneType::MOBILE );
-
-			// ! Transactions
-			$boleto->transactions->setAmount( $amount );
-			$boleto->transactions->setInstructions( 'Crédito de teste' );
-
-			$res = $gateway->charge( $boleto );
-			echo '<p>Debug:</p>';
-			var_dump( $res );
-			echo '<br><br>';
-			if ( isset( $res['status'] ) ) {
-				if ( AditumPayments\ApiSDK\Enum\ChargeStatus::PRE_AUTHORIZED === $res['status'] ) {
-
-					// ! Insert params to metadata
-					$order->update_meta_data(
-						'_params_aditum_boleto',
-						array(
-							'order_id'                    => $order_id,
-							'boleto_chargeId'             => $res['charge']->id,
-							'boleto_chargeStatus'         => $res['charge']->chargeStatus,
-							'boleto_transaction_id'       => $res['charge']->transactions[0]->transactionId,
-							'boleto_transaction_barcode'  => $res['charge']->transactions[0]->barcode,
-							'boleto_transaction_digitalLine' => $res['charge']->transactions[0]->digitalLine,
-							'boleto_transaction_amount'   => $res['charge']->transactions[0]->amount,
-							'boleto_transaction_transactionStatus' => $res['charge']->transactions[0]->transactionStatus,
-							'boleto_transaction_bankSlipUrl' => $res['charge']->transactions[0]->bankSlipUrl,
-							'boleto_transaction_deadline' => $res['charge']->transactions[0]->deadline,
-						)
-					);
-
-					$order->save();
-
-					// ! This will output the barcode as HTML output to display in the browser
-					echo 'Código de Barras:';
-					$generator = new Picqer\Barcode\BarcodeGeneratorHTML();
-					echo $generator->getBarcode( $res['charge']->transactions[0]->barcode, $generator::TYPE_CODE_128 );
-					echo '<p>' . esc_attr( $res['charge']->transactions[0]->digitalLine ) . '</p>';
-				}
-			} else {
-				if ( $res != null ) {
-					echo 'httStatus: ' . esc_attr( $res['httpStatus'] )
-					. "\n httpMsg: " . esc_attr( $res['httpMsg'] )
-					. "\n";
-				}
-			}
-		} else {
 			// ! This will output the barcode as HTML output to display in the browser
 			echo 'Código de Barras:';
 			$generator = new Picqer\Barcode\BarcodeGeneratorHTML();
 			echo $generator->getBarcode( $boleto_data['boleto_transaction_barcode'], $generator::TYPE_CODE_128 );
 			echo '<p>' . $boleto_data['boleto_transaction_digitalLine'] . '</p>';
-		}
-	} elseif ( $order->get_payment_method() === 'aditum_card' ) {
 
+			echo '<a href="' . $boleto_data['boleto_transaction_bankSlipUrl'] . '">Clique aqui para acessar o boleto.</a>';
+		}
 	}
 }
 

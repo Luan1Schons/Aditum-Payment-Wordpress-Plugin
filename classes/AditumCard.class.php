@@ -227,23 +227,15 @@ class WC_Aditum_Card_Pay_Gateway extends WC_Payment_Gateway {
 
 		global $woocommerce;
 		$order = new WC_Order( $order_id );
-		// echo $this->get_option( 'def_endereco_rua' );
+
 		$address_1    = str_replace( '_billing_', '', $this->get_option( 'def_endereco_rua' ) );
 		$address_2    = str_replace( '_billing_', '', $this->get_option( 'def_endereco_comp' ) );
 		$address_city = str_replace( '_billing_', '', $this->get_option( 'def_endereco_bairro' ) );
 
-		// var_dump($order->get_data()['billing']);
-		// var_dump($order->get_meta($this->get_option( 'def_endereco_rua' )));
-		// var_dump( $order );
-
-		// echo $order->get_billing_state();
-		// echo '<br>';
-		// echo $order->get_billing_postcode();
-		// echo '<br>';
-		// echo $order->get_billing_country();
-		// wp_die();
 		AditumPayments\ApiSDK\Configuration::initialize();
-		AditumPayments\ApiSDK\Configuration::setUrl( AditumPayments\ApiSDK\Configuration::DEV_URL );
+		if ( 'sandbox' === $this->environment ) {
+			AditumPayments\ApiSDK\Configuration::setUrl( AditumPayments\ApiSDK\Configuration::DEV_URL );
+		}
 		AditumPayments\ApiSDK\Configuration::setCnpj( $this->merchant_cnpj );
 		AditumPayments\ApiSDK\Configuration::setMerchantToken( $this->merchant_key );
 		AditumPayments\ApiSDK\Configuration::setlog( false );
@@ -314,12 +306,10 @@ class WC_Aditum_Card_Pay_Gateway extends WC_Payment_Gateway {
 		$authorization->transactions->card->setExpirationYear( 20 . $data['aditum_card_year_month'] );
 
 		$res = $gateway->charge( $authorization );
-		//echo '<pre>';
-		//print_r( $res );
-		//echo '</pre>';
-		//wp_die();
+
 		if ( isset( $res['status'] ) ) {
 			if ( AditumPayments\ApiSDK\Enum\ChargeStatus::AUTHORIZED === $res['status'] ) {
+
 					// ! Mark as on-hold (we're awaiting the cheque)
 					$order->update_status( 'completed', __( 'Pagamento Concluído', 'wc-aditum-card' ) );
 
