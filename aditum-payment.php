@@ -39,8 +39,8 @@ add_action( 'wp_enqueue_scripts', 'aditum_scripts_method' );
  * Enqueue a script with jQuery as a dependency.
  */
 function aditum_scripts_method() {
-	wp_enqueue_script( 'jquerymask', plugins_url() . '/aditum-boleto-gateway/assets/js/jquery.mask.js', array( 'jquery' ), '1.0', false );
-	wp_enqueue_script( 'main-scripts', plugins_url() . '/aditum-boleto-gateway/assets/js/app.js', array(), '1.0', false );
+	wp_enqueue_script( 'jquerymask', plugins_url() . '/aditum-payment-gateway/assets/js/jquery.mask.js', array( 'jquery' ), '1.0', false );
+	wp_enqueue_script( 'main-scripts', plugins_url() . '/aditum-payment-gateway/assets/js/app.js', array(), '1.0', false );
 }
 
 add_filter(
@@ -55,6 +55,16 @@ add_filter(
 	},
 	99
 );
+
+add_filter('woocommerce_checkout_fields', 'custom_billing_fields', 1000, 1);
+/**
+ * Set billing_neighborhood to required
+ */
+function custom_billing_fields( $fields ) {
+    $fields['billing']['billing_neighborhood']['required'] = true;
+
+    return $fields;
+}
 
 register_activation_hook( __FILE__, 'aditum_function_to_run' );
 /**

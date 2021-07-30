@@ -66,7 +66,7 @@ class WC_Aditum_Boleto_Pay_Gateway extends WC_Payment_Gateway {
 	 */
 	public function __construct() {
 		$this->id                 = 'aditum_boleto';
-		$this->icon               = apply_filters( 'woocommerce_aditum_boleto_icon', plugins_url() . '/../plugins/aditum-boleto-gateway/assets/icon.png' );
+		$this->icon               = apply_filters( 'woocommerce_aditum_boleto_icon', plugins_url() . '/../plugins/aditum-payment-gateway/assets/icon.png' );
 		$this->has_fields         = true;
 		$this->method_title       = __( 'Aditum Boleto', 'wc-aditum-boleto' );
 		$this->method_description = __( 'Aditum Pagamento por Boleto', 'wc-aditum-boleto' );
@@ -223,6 +223,11 @@ class WC_Aditum_Boleto_Pay_Gateway extends WC_Payment_Gateway {
 		global $woocommerce;
 		$order = new WC_Order( $order_id );
 
+		$address_1    = get_post_meta($order_id, '_'.$this->get_option( 'def_endereco_rua' ), true);
+		$address_2    = get_post_meta($order_id, '_'.$this->get_option( 'def_endereco_comp' ), true);
+		$address_number =  get_post_meta($order_id, '_'.$this->get_option( 'def_endereco_numero' ), true);
+		$address_neightboorhood = get_post_meta($order_id, '_'.$this->get_option( 'def_endereco_bairro' ), true);
+
 		$amount = str_replace( '.', '', $order->get_total() );
 
 		AditumPayments\ApiSDK\Configuration::initialize();
@@ -264,14 +269,14 @@ class WC_Aditum_Boleto_Pay_Gateway extends WC_Payment_Gateway {
 		}
 
 		// ! Customer->address
-		$boleto->customer->address->setStreet( $order->get_billing_address_1() );
-		$boleto->customer->address->setNumber( $order->get_meta( '_billing_number' ) );
-		$boleto->customer->address->setNeighborhood( $order->get_billing_city() );
+		$boleto->customer->address->setStreet( $address_1 );
+		$boleto->customer->address->setNumber( $address_number );
+		$boleto->customer->address->setNeighborhood( $address_number );
 		$boleto->customer->address->setCity( $order->get_billing_city() );
 		$boleto->customer->address->setState( $order->get_billing_state() );
 		$boleto->customer->address->setCountry( $order->get_billing_country() );
 		$boleto->customer->address->setZipcode( $order->get_billing_postcode() );
-		$boleto->customer->address->setComplement( '' );
+		$boleto->customer->address->setComplement( $address_2 );
 
 		// ! Customer->phone
 		$boleto->customer->phone->setCountryCode( '55' );
