@@ -72,6 +72,8 @@ register_activation_hook( __FILE__, 'aditum_function_to_run' );
  */
 function aditum_function_to_run() {
 
+	remove_menu_page('webhook_boleto_aditum');
+
 	$page = array(
 		'post_slug'    => 'webhook_boleto_aditum',
 		'post_title'   => wp_strip_all_tags( 'WebHook Aditum Boleto' ),
