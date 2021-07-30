@@ -146,6 +146,17 @@ function aditum_add_content_thankyou( $order_id ) {
 
 			echo '<a href="' . $boleto_data['boleto_transaction_bankSlipUrl'] . '">Clique aqui para acessar o boleto.</a>';
 		}
+	}else if ( $order->get_payment_method() === 'aditum_card' )
+	{
+		$card_data = $order->get_meta( '_params_aditum_card' );
+
+		if ( ! empty( $card_data ) ) {
+			if($card_data['card_transaction_transactionStatus'] === 'PreAuthorized'){
+				echo '<div class="woocommerce-info"><b>Pagamento Pré-Autorizado</b> recebemos o seu pedido mas o seu pagamento ainda não foi totalmente aprovado, assim que a compra for totalmente aprovada te notificaremos por e-mail.	</div>';
+			}else if($card_data['card_transaction_transactionStatus'] === 'Captured'){
+				echo '<div class="woocommerce-message"><b>Pagamento Feito!</b> recebemos o seu pagamento com sucesso.</div>';
+			}
+		}
 	}
 }
 

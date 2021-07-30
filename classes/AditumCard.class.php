@@ -374,6 +374,8 @@ class WC_Aditum_Card_Pay_Gateway extends WC_Payment_Gateway {
 			);
 
 			$order->save();
+			//print_r($res['charge']->transactions[0]->transactionStatus);
+			//wp_die();
 
 			if ( AditumPayments\ApiSDK\Enum\ChargeStatus::AUTHORIZED === $res['status'] ) {
 
@@ -390,19 +392,20 @@ class WC_Aditum_Card_Pay_Gateway extends WC_Payment_Gateway {
 					);
 
 			} else {
-				print_r($res['charge']->transactions[0]->transactionStatus);
-				wp_die();
 				if($res['charge']->transactions[0]->transactionStatus === "Denied")
 				{
 					return wc_add_notice( $res['charge']->transactions[0]->errorMessage, 'error' );
 				}else if($res['charge']->transactions[0]->transactionStatus === "PreAuthorized"){
 
-					$order->update_status( 'completed', __( 'Pagamento Concluído', 'wc-aditum-card' ) );
+					$order->update_status( 'pending', __( 'Aguardando autorização do pagamento', 'wc-aditum-card' ) );
 					
 					return array(
 						'result'   => 'success',
 						'redirect' => $this->get_return_url( $order ),
 					);
+
+				}else{
+					return wc_add_notice( $res['charge']->transactions[0]->errorMessage, 'error' );
 				}
 			}
 		} else {
