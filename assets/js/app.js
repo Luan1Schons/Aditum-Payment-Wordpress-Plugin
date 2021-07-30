@@ -15,9 +15,36 @@ jQuery.noConflict();
                     }
                 });
             });
-           
+
             $(document).on('click', 'input#aditum_card_cvv', function(){
                 $('input#aditum_card_cvv').mask('000');
+            });
+
+            $(document).on('click', 'input#card_holder_document', function(){
+                $("#card_holder_document").keydown(function(){
+                try {
+                    $("#card_holder_document").unmask();
+                } catch (e) {}
+
+                var tamanho = $("#card_holder_document").val().length;
+
+                if(tamanho < 11){
+                    $("#card_holder_document").mask("999.999.999-99");
+                } else {
+                    $("#card_holder_document").mask("99.999.999/9999-99");
+                }
+
+                // ajustando foco
+                var elem = this;
+                setTimeout(function(){
+                    // mudo a posição do seletor
+                    elem.selectionStart = elem.selectionEnd = 10000;
+                }, 0);
+                // reaplico o valor para mudar o foco
+                var currentValue = $(this).val();
+                $(this).val('');
+                $(this).val(currentValue);
+                });
             });
 
             $(document).on('click', 'input#aditum_card_expiration_month', function(){

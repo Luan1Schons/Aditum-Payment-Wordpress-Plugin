@@ -2,70 +2,59 @@
 
 namespace AditumPayments\ApiSDK\Domains;
 
-class Customer
-{
+class Customer {
     private $id = "";
     private $name = "";
     private $email = "";
     private $documentType = 0;
     private $document = "";
 
-    public $address = null;
-    public $phone = null;
+    public $address = NULL;
+    public $phone = NULL;
 
-    public function __construct()
-    {
+    public function __construct() {
         $this->address = new Address;
         $this->phone = new Phone;
     }
 
-    public function setId($id)
-    {
+    public function setId($id) {
         $this->id = $id;
     }
 
-    public function getId()
-    {
+    public function getId() {
         return $this->id;
     }
 
-    public function setName($name)
-    {
+    public function setName($name) {
         $this->name = $name;
     }
 
-    public function getName()
-    {
+    public function getName() {
         return $this->name;
     }
 
-    public function setEmail($email)
-    {
+    public function setEmail($email) {
         $this->email = $email;
     }
 
-    public function getEmail()
-    {
+    public function getEmail() {
         return $this->email;
     }
 
-    public function setDocumentType($documentType)
-    {
+    public function setDocumentType($documentType) {
         $this->documentType = $documentType;
     }
 
-    public function getDocumentType()
-    {
+    public function getDocumentType() {
         return $this->documentType;
     }
 
-    public function setDocument($document)
-    {
+    public function setDocument($document) {
         $this->document = $document;
     }
 
-    public function getDocument()
-    {
+    public function getDocument() {
         return $this->document;
     }
+
 }

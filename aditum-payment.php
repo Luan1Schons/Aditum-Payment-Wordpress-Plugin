@@ -1,6 +1,6 @@
 <?php
 /**
- * Plugin Name:       Aditum Boleto Gateway
+ * Plugin Name:       Aditum Gateway
  * Plugin URI:        https://aditum.com.br/
  * Description:       Gateway de pagamento de boleto do Aditum para o WooCommerce
  * Version:           1.0.0
@@ -158,6 +158,17 @@ function gateway_aditum_card_custom_fields( $description, $payment_id ) {
 			array(
 				'type'     => 'text',
 				'label'    => __( 'Nome do Proprietário do cartão', 'woocommerce' ),
+				'class'    => array( 'form-row-wide' ),
+				'required' => true,
+			),
+			''
+		);
+
+		woocommerce_form_field(
+			'card_holder_document',
+			array(
+				'type'     => 'text',
+				'label'    => __( 'Documento do Proprietário do cartão (CPF/CNPJ)', 'woocommerce' ),
 				'class'    => array( 'form-row-wide' ),
 				'required' => true,
 			),

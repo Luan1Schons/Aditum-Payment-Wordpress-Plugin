@@ -209,6 +209,7 @@ class WC_Aditum_Card_Pay_Gateway extends WC_Payment_Gateway {
 
 		$keys = array(
 			'card_holder_name',
+			'card_holder_document',
 			'aditum_card_number',
 			'aditum_card_cvv',
 			'aditum_card_expiration_month',
@@ -257,8 +258,13 @@ class WC_Aditum_Card_Pay_Gateway extends WC_Payment_Gateway {
 		$gateway       = new AditumPayments\ApiSDK\Gateway();
 		$authorization = new AditumPayments\ApiSDK\Domains\Authorization();
 
-		$customer_phone_area_code = substr( $order->get_billing_phone(), 0, 2 );
-		$customer_phone           = substr( $order->get_billing_phone(), 2 );
+		$phone = str_replace( '(', '', $order->get_billing_phone() );
+		$phone = str_replace( ')', '', $phone);
+		$phone = str_replace( '-', '', $phone );
+		$phone = str_replace( ' ', '', $phone );
+
+		$customer_phone_area_code = substr( $phone, 0, 2 );
+		$customer_phone           = substr( $phone, 2 );
 		$amount                   = str_replace( '.', '', $order->get_total() );
 
 		// ! Customer
@@ -267,19 +273,87 @@ class WC_Aditum_Card_Pay_Gateway extends WC_Payment_Gateway {
 		$authorization->customer->setId( "$order_id" );
 
 		if ( strlen( $order->get_meta( '_billing_cpf' ) ) === 14 ) {
-
-			$authorization->customer->setDocumentType( AditumPayments\ApiSDK\Enum\DocumentType::CNPJ );
+			$authorization->customer->setDocumentType( AditumPayments\ApiSDK\Enum\DocumentType::CPF );
 
 			$cpf = str_replace( '.', '', $order->get_meta( '_billing_cpf' ) );
 			$cpf = str_replace( '-', '', $cpf );
-			$authorization->customer->setDocument( $this->merchant_cnpj );
+
+			$cpf_card_holder = str_replace( '.', '', $data['card_holder_document']  );
+			$cpf_card_holder  = str_replace( '-', '', $cpf_card_holder );
+
+			$authorization->customer->setDocument( $cpf );
+			$authorization->transactions->card->setCardholderDocument($cpf_card_holder);
 		} else {
 			$authorization->customer->setDocumentType( AditumPayments\ApiSDK\Enum\DocumentType::CNPJ );
 
 			$cnpj = str_replace( '.', '', $order->get_meta( '_billing_cnpj' ) );
 			$cnpj = str_replace( '-', '', $cnpj );
-			$authorization->customer->setDocument( $this->merchant_cnpj );
+			$cnpj = str_replace( '/', '', $cnpj );
+
+			$cnpj_card_holder = str_replace( '.', '', $order->get_meta( '_billing_cnpj' ) );
+			$cnpj_card_holder = str_replace( '-', '', $cnpj_card_holder );
+			$cnpj_card_holder = str_replace( '/', '', $cnpj_card_holder );
+
+			$authorization->customer->setDocument( $cnpj );
+			$authorization->transactions->card->setCardholderDocument($cnpj_card_holder);
 		}
+
+		// ! Customer->address
+		$authorization->customer->address->setStreet( $order->get_data()['billing'][ $address_1 ] );
+		$authorization->customer->address->setNumber( $order->get_meta( '_billing_number' ) );
+		$authorization->customer->address->setNeighborhood( $order->get_data()['billing'][ $address_city ] );
+		$authorization->customer->address->setCity( $order->get_data()['billing'][ $address_city ] );
+		$authorization->customer->address->setState( $order->get_billing_state() );
+		$authorization->customer->address->setCountry( $order->get_billing_country() );
+		$authorization->customer->address->setZipcode( str_replace( '-', '', $order->get_billing_postcode() ) );
+		$authorization->customer->address->setComplement( $order->get_data()['billing'][ $address_2 ] );
+
+		// ! Customer->phone
+		$authorization->customer->phone->setCountryCode( '55' );
+		$authorization->customer->phone->setAreaCode( $customer_phone_area_code );
+		$authorization->customer->phone->setNumber( $customer_phone );
+		$authorization->customer->phone->setType( AditumPayments\ApiSDK\Enum\PhoneType::MOBILE );
+
+		// ! Transactions
+		$authorization->transactions->setAmount( $amount );
+		$authorization->transactions->setPaymentType( AditumPayments\ApiSDK\Enum\PaymentType::CREDIT );
+		$authorization->transactions->setInstallmentNumber( 2 ); // Só pode ser maior que 1 se o tipo de transação for crédito.
+
+
+		if ( strlen( $order->get_meta( '_billing_cpf' ) ) === 14 ) {
+			$authorization->customer->setDocumentType( AditumPayments\ApiSDK\Enum\DocumentType::CPF );
+			$cpf = str_replace( '.', '', $order->get_meta( '_billing_cpf' ) );
+			$cpf = str_replace( '-', '', $cpf );
+			$authorization->customer->setDocument( $cpf );
+		} else {
+			$authorization->customer->setDocumentType( AditumPayments\ApiSDK\Enum\DocumentType::CNPJ );
+			$cnpj = str_replace( '.', '', $order->get_meta( '_billing_cnpj' ) );
+			$cnpj = str_replace( '-', '', $cnpj );
+			$authorization->customer->setDocument( $cnpj );
+		}
+		
+		$authorization->transactions->card->setCardNumber( str_replace( ' ', '', $data['aditum_card_number'] ) );
+		$authorization->transactions->card->setCVV( $data['aditum_card_cvv'] );
+		$authorization->transactions->card->setCardholderName( $data['card_holder_name'] );
+		$authorization->transactions->card->setExpirationMonth( $data['aditum_card_expiration_month'] );
+		$authorization->transactions->card->setExpirationYear( 20 . $data['aditum_card_year_month'] );
+
+	// $authorization->transactions->card->setCardNumber("4444333322221111"); // Aprovado
+	// $authorization->transactions->card->setCardNumber("4222222222222224"); // Pendente e aprovar posteriormente
+	// $authorization->transactions->card->setCardNumber("4222222222222225"); // Pendente e negar posteriormente
+	// $authorization->transactions->card->setCardNumber("4444333322221112"); // Negar
+
+		$authorization->transactions->card->billingAddress->setStreet($order->get_data()['billing'][ $address_1 ]);
+		$authorization->transactions->card->billingAddress->setNumber($order->get_meta( '_billing_number' ));
+		$authorization->transactions->card->billingAddress->setNeighborhood($order->get_data()['billing'][ $address_city ]);
+		$authorization->transactions->card->billingAddress->setCity($order->get_data()['billing'][ $address_city ]);
+		$authorization->transactions->card->billingAddress->setState($order->get_billing_state());
+		$authorization->transactions->card->billingAddress->setCountry($order->get_billing_country());
+		$authorization->transactions->card->billingAddress->setZipcode(str_replace( '-', '', $order->get_billing_postcode() ));
+		$authorization->transactions->card->billingAddress->setComplement($order->get_data()['billing'][ $address_2 ] );
+
+/*
+		
 
 		// ! Customer->address
 
@@ -309,7 +383,7 @@ class WC_Aditum_Card_Pay_Gateway extends WC_Payment_Gateway {
 		$authorization->transactions->card->setCardholderName( $data['card_holder_name'] );
 		$authorization->transactions->card->setExpirationMonth( $data['aditum_card_expiration_month'] );
 		$authorization->transactions->card->setExpirationYear( 20 . $data['aditum_card_year_month'] );
-
+*/
 		$res = $gateway->charge( $authorization );
 		//echo '<pre>';
 		//print_r( $res );
@@ -351,7 +425,12 @@ class WC_Aditum_Card_Pay_Gateway extends WC_Payment_Gateway {
 			}
 		} else {
 			if ( null !== $res ) {
-				return wc_add_notice( $res['httpMsg'], 'error' );
+				$messages = json_decode($res['httpMsg'], true);
+				$erros = '';
+				foreach($messages['errors'] as $errors){
+					$erros .= $errors['message'].'<br>';
+				}
+				return wc_add_notice( $erros, 'error' );
 			}
 		}
 	}
