@@ -62,6 +62,35 @@ class WC_Aditum_Boleto_Pay_Gateway extends WC_Payment_Gateway {
 	public $initial_status = '';
 
 	/**
+	 * Ambient Initial Status
+	 *
+	 * @var string
+	 */
+	public $fine_start = '';
+
+	/**
+	 * Ambient Initial Status
+	 *
+	 * @var string
+	 */
+	public $fine_value = '';
+
+	/**
+	 * Ambient Initial Status
+	 *
+	 * @var string
+	 */
+	public $fine_percentual = '';
+
+	/**
+	 * Ambient Expiry Date
+	 *
+	 * @var string
+	 */
+	public $expiry_date = '';
+
+
+	/**
 	 * Function Plugin constructor
 	 */
 	public function __construct() {
@@ -87,6 +116,14 @@ class WC_Aditum_Boleto_Pay_Gateway extends WC_Payment_Gateway {
 		$this->environment    = $this->get_option( 'aditum_boleto_environment' );
 		$this->initial_status = $this->get_option( 'aditum_boleto_initial_status' );
 		$this->deadline       = $this->get_option( 'aditum_boleto_deadline_boleto' );
+
+		// Fines
+		$this->fine_start       	 = $this->get_option( 'aditum_boleto_fine_start' );
+		$this->fine_value      		 = $this->get_option( 'aditum_boleto_fine_value' );
+		$this->fine_percentual       = $this->get_option( 'aditum_boleto_fine_percentual' );
+
+		$this->expiry_date = $this->get_option( 'aditum_boleto_order_expiry' );
+
 
 		$this->init_form_fields();
 		$this->init_settings();
@@ -144,6 +181,13 @@ class WC_Aditum_Boleto_Pay_Gateway extends WC_Payment_Gateway {
 					'default'     => __( '', 'wc-aditum-boleto' ),
 					'desc_tip'    => true,
 				),
+				'aditum_boleto_order_expiry' => array(
+					'title'       => __( 'Tempo de expiração do Pedido', 'wc-aditum_card' ),
+					'type'        => 'number',
+					'description' => __( 'Depois de quanto tempo o pedido pendente de pagamento deve ser cancelado, define em dias.', 'wc-aditum_card' ),
+					'default'     => __( '3', 'wc-aditum_card' ),
+					'desc_tip'    => true,
+				),
 				'aditum_boleto_deadline_boleto' => array(
 					'title'       => __( 'Tempo de expiração do boleto (Dias)', 'wc-aditum-boleto' ),
 					'type'        => 'number',
@@ -151,12 +195,32 @@ class WC_Aditum_Boleto_Pay_Gateway extends WC_Payment_Gateway {
 					'default'     => __( '2', 'wc-aditum-boleto' ),
 					'desc_tip'    => true,
 				),
+				'aditum_boleto_fine_start' => array(
+					'title'       => __( 'Dias para multa', 'wc-aditum-boleto' ),
+					'type'        => 'number',
+					'description' => __( 'Dias para começar a contar a multa.', 'wc-aditum-boleto' ),
+					'default'     => __( '2', 'wc-aditum-boleto' ),
+					'desc_tip'    => true,
+				),
+				'aditum_boleto_fine_value' => array(
+					'title'       => __( 'Valor fixo da multa', 'wc-aditum-boleto' ),
+					'type'        => 'number',
+					'description' => __( 'Valor fixo da multa.', 'wc-aditum-boleto' ),
+					'default'     => __( '300', 'wc-aditum-boleto' ),
+					'desc_tip'    => true,
+				),
+				'aditum_boleto_fine_percentual' => array(
+					'title'       => __( 'Valor percentual da multa', 'wc-aditum-boleto' ),
+					'type'        => 'number',
+					'description' => __( 'valor percentual sobre o valor original da multa.', 'wc-aditum-boleto' ),
+					'default'     => __( '10', 'wc-aditum-boleto' ),
+					'desc_tip'    => true,
+				),
 				'aditum_boleto_initial_status'  => array(
 					'title'       => __( 'Status do Pedido criado', 'wc-aditum-boleto' ),
 					'type'        => 'select',
 					'options'     => wc_get_order_statuses(),
 					'description' => __( 'Status do pedido criado.', 'wc-aditum-boleto' ),
-					'default'     => __( '2', 'wc-aditum-boleto' ),
 					'desc_tip'    => true,
 				),
 				'aditum_boleto_cnpj'            => array(
@@ -287,6 +351,14 @@ class WC_Aditum_Boleto_Pay_Gateway extends WC_Payment_Gateway {
 		// ! Transactions
 		$boleto->transactions->setAmount( $amount );
 		$boleto->transactions->setInstructions( 'Crédito de teste' );
+
+		// Transactions->fine (opcional)
+
+		if(!empty($this->get_option('aditum_boleto_fine_start'))){
+			$boleto->transactions->fine->setStartDate($this->fine_start);
+			$boleto->transactions->fine->setAmount($this->fine_value);
+			$boleto->transactions->fine->setInterest($this->fine_percentual);
+		}
 
 		$res = $gateway->charge( $boleto );
 		if ( isset( $res['status'] ) ) {

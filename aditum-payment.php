@@ -122,8 +122,52 @@ function aditum_gateways_init() {
 		return $methods;
 	}
 
+	// ! Credit Card Gateway Class Register
+	include_once plugin_dir_path( __FILE__ ) . 'classes/AditumDebitCard.class.php';
+	add_filter( 'woocommerce_payment_gateways', 'wc_gateway_aditum_debitcard', 1000 );
+	function wc_gateway_aditum_debitcard( $methods ) {
+		$methods[] = 'WC_Aditum_DebitCard_Pay_Gateway';
+		return $methods;
+	}
+
 }
 
+// add the action 
+add_action( 'woocommerce_view_order', 'action_woocommerce_view_order', 10, 2 ); 
+// define the woocommerce_view_order callback 
+function action_woocommerce_view_order( $order_id) { 
+
+    $order = new WC_Order( $order_id );
+
+	if ( $order->get_payment_method() === 'aditum_boleto' ) {
+		$boleto = new WC_Aditum_Boleto_Pay_Gateway();
+
+		$date_order_expiry = date('Y-m-d H:i:s', strtotime($order->get_date_created(). "+ $boleto->expiry_date days"));
+
+		if(strtotime($date_order_expiry) < date('Y-m-d H:i:s')){
+			echo '<div class="woocommerce-error"><b>Pedido Expirado</b> Não é possível mais visualizar este pedido.	</div>';
+		}
+	}else if ( $order->get_payment_method() === 'aditum_card' ) {
+		$card = new WC_Aditum_Card_Pay_Gateway();
+		
+		//var_dump(get_post_meta('woocommerce_aditum_card_aditum_card_order_expiry'));
+		$date_order_expiry = date('Y-m-d H:i:s', strtotime($order->get_date_created(). "+ $card->expiry_date days"));
+
+		if(strtotime($date_order_expiry) < date('Y-m-d H:i:s')){
+			echo '<div class="woocommerce-error"><b>Pedido Expirado</b> Não é possível mais visualizar este pedido.	</div>';
+		}
+
+	}else if( $order->get_payment_method() === 'aditum_debitcard' ) {
+		$debitcard = new WC_Aditum_DebitCard_Pay_Gateway();
+
+		$date_order_expiry = date('Y-m-d H:i:s', strtotime($order->get_date_created(). "+ $debitcard->expiry_date days"));
+
+		if(strtotime($date_order_expiry) < date('Y-m-d H:i:s')){
+			echo '<div class="woocommerce-error"><b>Pedido Expirado</b> Não é possível mais visualizar este pedido.	</div>';
+		}
+	}
+}; 
+         
 
 add_action( 'woocommerce_thankyou', 'aditum_add_content_thankyou' );
 /**
@@ -162,6 +206,19 @@ function aditum_add_content_thankyou( $order_id ) {
 	}
 }
 
+add_action( 'woocommerce_checkout_process', 'bt_add_checkout_checkbox_warning' );
+/**
+ * Alert if checkbox not checked
+ */ 
+function bt_add_checkout_checkbox_warning($order_id) {
+	$order = new WC_Order( $order_id );
+
+    if ( ! (int) isset( $_POST['aditum_checkbox'] ) ) {
+        wc_add_notice( __( 'Porfavor aceite os termos & condições.' ), 'error' );
+    }
+}
+
+
 add_filter( 'woocommerce_gateway_description', 'gateway_aditum_card_custom_fields', 20, 2 );
 /**
  * Card Fields Checkout
@@ -171,6 +228,22 @@ add_filter( 'woocommerce_gateway_description', 'gateway_aditum_card_custom_field
  */
 function gateway_aditum_card_custom_fields( $description, $payment_id ) {
 	if ( 'aditum_card' === $payment_id ) {
+		//global $woocommerce;
+
+		//$cart_total_price = wc_prices_include_tax() ? WC()->cart->get_cart_contents_total() + WC()->cart->get_cart_contents_tax() : WC()->cart->get_cart_contents_total();
+		
+		$total = WC()->cart->get_total(null);
+
+		$installment_options = [];
+		$card = new WC_Aditum_Card_Pay_Gateway();
+		$installment_count = $card->max_installment;
+		
+		
+		for($i = 1; $i <= $installment_count;$i++){
+			$installment_total = $total/$i;
+			$installment_options[$i] = $i.' parcela de R$'.number_format($installment_total, 2);;
+		}
+		
 
 		ob_start(); // ! Start buffering
 
@@ -244,13 +317,119 @@ function gateway_aditum_card_custom_fields( $description, $payment_id ) {
 			''
 		);
 
+		woocommerce_form_field(
+			'aditum_card_installment',
+			array(
+				'type'     => 'select',
+				'options'  => $installment_options,
+				'label'    => __( 'Quantidade de parcelas', 'woocommerce' ),
+				'class'    => array( 'form-row-wide' ),
+				'required' => true,
+			),
+			''
+		);
+
+		woocommerce_form_field( 'aditum_checkbox', array( // CSS ID
+			'type'          => 'checkbox',
+			'class'         => array('form-row mycheckbox'), // CSS Class
+			'label_class'   => array('woocommerce-form__label woocommerce-form__label-for-checkbox checkbox'),
+			'input_class'   => array('woocommerce-form__input woocommerce-form__input-checkbox input-checkbox'),
+			'required'      => true, // Mandatory or Optional
+			'label'         => '<a href="https://drive.google.com/file/d/1bWsmDz9AMe9pNETRCbGk-zl2AOWNpt3a/view?usp=sharing" target="_blank" rel="noopener">TERMOS & CONDIÇÕES</a>', // Label and Link
+		 ));    
+
+		echo '<div>';
+
+		$description .= ob_get_clean(); // ! Append buffered content
+	}else if ( 'aditum_debitcard' === $payment_id ) {
+
+		ob_start(); // ! Start buffering
+
+		echo '<div  class="aditum-debitcard-fields" style="padding:10px 0;">';
+
+		woocommerce_form_field(
+			'debitcard_holder_name',
+			array(
+				'type'     => 'text',
+				'label'    => __( 'Nome do Proprietário do cartão', 'woocommerce' ),
+				'class'    => array( 'form-row-wide' ),
+				'required' => true,
+			),
+			''
+		);
+
+		woocommerce_form_field(
+			'debitcard_holder_document',
+			array(
+				'type'     => 'text',
+				'label'    => __( 'Documento do Proprietário do cartão (CPF/CNPJ)', 'woocommerce' ),
+				'class'    => array( 'form-row-wide' ),
+				'required' => true,
+			),
+			''
+		);
+
+		woocommerce_form_field(
+			'aditum_debitcard_number',
+			array(
+				'type'     => 'text',
+				'label'    => __( 'Informe o número do cartão', 'woocommerce' ),
+				'class'    => array( 'form-row-wide' ),
+				'required' => true,
+			),
+			''
+		);
+
+		echo '<span id="card-brand"></span>';
+
+		woocommerce_form_field(
+			'aditum_debitcard_cvv',
+			array(
+				'type'     => 'text',
+				'label'    => __( 'Código de segurança (CVV)', 'woocommerce' ),
+				'class'    => array( 'form-row-wide' ),
+				'required' => true,
+			),
+			''
+		);
+
+		woocommerce_form_field(
+			'aditum_debitcard_expiration_month',
+			array(
+				'type'     => 'number',
+				'label'    => __( 'Mês Expiração', 'woocommerce' ),
+				'class'    => array( 'form-row-wide' ),
+				'required' => true,
+			),
+			''
+		);
+
+		woocommerce_form_field(
+			'aditum_debitcard_year_month',
+			array(
+				'type'     => 'number',
+				'label'    => __( 'Ano Expiração', 'woocommerce' ),
+				'class'    => array( 'form-row-wide' ),
+				'required' => true,
+			),
+			''
+		);
+
+		woocommerce_form_field( 'aditum_checkbox', array( // CSS ID
+			'type'          => 'checkbox',
+			'class'         => array('form-row mycheckbox'), // CSS Class
+			'label_class'   => array('woocommerce-form__label woocommerce-form__label-for-checkbox checkbox'),
+			'input_class'   => array('woocommerce-form__input woocommerce-form__input-checkbox input-checkbox'),
+			'required'      => true, // Mandatory or Optional
+			'label'         => '<a href="https://drive.google.com/file/d/1bWsmDz9AMe9pNETRCbGk-zl2AOWNpt3a/view?usp=sharing" target="_blank" rel="noopener">TERMOS & CONDIÇÕES</a>', // Label and Link
+		 ));    
+
 		echo '<div>';
 
 		$description .= ob_get_clean(); // ! Append buffered content
 	}
 	return $description;
 }
-
 
 add_action( 'wp_ajax_get_card_brand', 'aditum_get_card_brand' );
 add_action( 'wp_ajax_nopriv_get_card_brand', 'aditum_get_card_brand' );

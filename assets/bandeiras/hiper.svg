@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="66" height="46" viewBox="0 0 66 46">
+  <g id="hiper" transform="translate(-133 -16)">
+    <g id="vero" transform="translate(127 -104)">
+      <g id="vr" transform="translate(131 -2)">
+        <g id="Google_Pay" data-name="Google Pay" transform="translate(-125 122)">
+          <g id="Rectangle_Copy_15" data-name="Rectangle Copy 15" fill="#fff" stroke="#e6e7e8" stroke-miterlimit="10" stroke-width="1">
+            <rect width="66" height="46" rx="3" stroke="none"/>
+            <rect x="0.5" y="0.5" width="65" height="45" rx="2.5" fill="none"/>
+          </g>
+        </g>
+      </g>
+    </g>
+    <g id="Grupo_9" data-name="Grupo 9" transform="translate(-157 -178.486)">
+      <path id="Caminho_13" data-name="Caminho 13" d="M305.4,208.594l25.774-6.128a7.051,7.051,0,0,1,8.467,5.214l6.128,25.774a7.013,7.013,0,0,1-.991,5.511H305.4l-5.208-21.9a7.052,7.052,0,0,1,5.214-8.467Z" transform="translate(0)" fill="#e85400" fill-rule="evenodd"/>
+      <path id="Caminho_14" data-name="Caminho 14" d="M328.03,290.606v11.012h2.5v-4.608h4.1v4.608h2.484V290.606h-2.484v4.232h-4.1v-4.232Z" transform="translate(-22.681 -71.475)" fill="#fff"/>
+      <path id="Caminho_15" data-name="Caminho 15" d="M456.477,310.472a5.9,5.9,0,0,0,.082-.98c0-1.977-.98-3.987-3.562-3.987a4,4,0,0,0-4.036,4.264c0,2.5,1.552,4.068,4.264,4.068a7.885,7.885,0,0,0,2.892-.49l-.327-1.683a7.037,7.037,0,0,1-2.206.327c-1.16,0-2.173-.49-2.255-1.52Zm-5.163-1.7a1.63,1.63,0,0,1,1.536-1.617,1.442,1.442,0,0,1,1.405,1.617Z" transform="translate(-120.536 -83.531)" fill="#fff"/>
+      <path id="Caminho_16" data-name="Caminho 16" d="M492.67,313.675h2.484v-4.052a2.93,2.93,0,0,1,.049-.555,1.6,1.6,0,0,1,1.7-1.258,3.565,3.565,0,0,1,.67.065v-2.336a2.563,2.563,0,0,0-.523-.033,2.347,2.347,0,0,0-2.157,1.65h-.065l-.082-1.47h-2.14c.033.686.065,1.454.065,2.63v5.359Z" transform="translate(-155.852 -83.531)" fill="#fff"/>
+      <path id="Caminho_17" data-name="Caminho 17" d="M383.462,288.283a1.277,1.277,0,1,1-1.277,1.277,1.277,1.277,0,0,1,1.277-1.277Z" transform="translate(-66.502 -69.595)" fill="#ffe000" fill-rule="evenodd"/>
+      <path id="Caminho_18" data-name="Caminho 18" d="M388.707,311.833h1.247a1.629,1.629,0,0,0,1.818-1.637c0-.836-.06-2.726-1.607-2.726-1.777,0-1.489,2.347-1.481,3.575,0,.263.017.526.024.788Zm-6.522-6.14h2.553v4.5a1.484,1.484,0,0,0,1.488,1.637c.007-2.027,0-4.114-.069-6.14h2.133q.07.585.127,1.174c1.008-2.016,4.184-1.572,5.253.129,1.1,1.757,1.48,6.789-3.718,6.789h-1.21c.012,1.021.014,2.045.014,3.068H386.2c0-.982.007-2.011.013-3.068-2.76-.01-4.031-1.762-4.031-3.59v-4.5Z" transform="translate(-66.502 -83.55)" fill="#fff" fill-rule="evenodd"/>
+    </g>
+  </g>
+</svg>

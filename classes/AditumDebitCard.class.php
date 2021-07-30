@@ -1,6 +1,6 @@
 <?php
 /**
- * Aditum Gateway Payment Card Class
+ * Aditum Gateway Payment Debit Card Class
  * Description: Card Class
  *
  * @package Aditum/Payments
@@ -12,7 +12,7 @@ error_reporting( E_ALL );
 /**
  * Class Init WooCommerce Gateway
  */
-class WC_Aditum_Card_Pay_Gateway extends WC_Payment_Gateway {
+class WC_Aditum_DebitCard_Pay_Gateway extends WC_Payment_Gateway {
 
 	/**
 	 * Whether or not logging is enabled
@@ -72,21 +72,14 @@ class WC_Aditum_Card_Pay_Gateway extends WC_Payment_Gateway {
 	public $expiry_date = '';
 
 	/**
-	 * Ambient Max Installment
-	 *
-	 * @var string
-	 */
-	public $max_installment = '';
-
-	/**
 	 * Function Plugin constructor
 	 */
 	public function __construct() {
-		$this->id = 'aditum_card';
-		// $this->icon               = apply_filters( 'woocommerce_aditum_card_icon', plugins_url() . '/../plugins/aditum-boleto-gateway/assets/icon.png' );
+		$this->id = 'aditum_debitcard';
+		// $this->icon               = apply_filters( 'woocommerce_aditum_debitcard_icon', plugins_url() . '/../plugins/aditum-boleto-gateway/assets/icon.png' );
 		$this->has_fields         = true;
-		$this->method_title       = __( 'Aditum Cartão de Crédito', 'wc-aditum-card' );
-		$this->method_description = __( 'Aditum Pagamento por Cartão de Crédito', 'wc-aditum-card' );
+		$this->method_title       = __( 'Aditum Cartão de Débito', 'wc-aditum-debitcard' );
+		$this->method_description = __( 'Aditum Pagamento por Cartão de Débito', 'wc-aditum-debitcard' );
 
 		$this->title        = $this->get_option( 'title' );
 		$this->description  = $this->get_option( 'description' );
@@ -99,14 +92,12 @@ class WC_Aditum_Card_Pay_Gateway extends WC_Payment_Gateway {
 			'products',
 		);
 
-		$this->merchant_key   = $this->get_option( 'aditum_card_merchantKey' );
-		$this->merchant_cnpj  = $this->get_option( 'aditum_card_cnpj' );
-		$this->environment    = $this->get_option( 'aditum_card_environment' );
-		$this->initial_status = $this->get_option( 'aditum_card_initial_status' );
+		$this->merchant_key   = $this->get_option( 'aditum_debitcard_merchantKey' );
+		$this->merchant_cnpj  = $this->get_option( 'aditum_debitcard_cnpj' );
+		$this->environment    = $this->get_option( 'aditum_debitcard_environment' );
+		$this->initial_status = $this->get_option( 'aditum_debitcard_initial_status' );
 
-		$this->expiry_date = $this->get_option( 'aditum_card_order_expiry' );
-
-		$this->max_installment = $this->get_option( 'aditum_card_max_installments' );
+		$this->expiry_date = $this->get_option( 'aditum_debitcard_order_expiry' );
 
 		$this->init_form_fields();
 		$this->init_settings();
@@ -126,7 +117,7 @@ class WC_Aditum_Card_Pay_Gateway extends WC_Payment_Gateway {
 			$inputs_address[ $key ] = $key;
 		}
 		$this->form_fields = apply_filters(
-			'woo_aditum_card_pay_fields',
+			'woo_aditum_debitcard_pay_fields',
 			array(
 				'enabled'                    => array(
 					'title'   => __( 'Habilitar/Desabilitar', 'wc-aditum_card' ),
@@ -134,7 +125,7 @@ class WC_Aditum_Card_Pay_Gateway extends WC_Payment_Gateway {
 					'label'   => __( 'Habilitar ou desabilitar o Módulo de Pagamento', 'wc-aditum_card' ),
 					'default' => 'no',
 				),
-				'aditum_card_environment'    => array(
+				'aditum_debitcard_environment'    => array(
 					'title'   => __( 'Ambiente do Gateway', 'wc-aditum_card' ),
 					'type'    => 'select',
 					'options' => array(
@@ -152,7 +143,7 @@ class WC_Aditum_Card_Pay_Gateway extends WC_Payment_Gateway {
 				'description'                => array(
 					'title'       => __( 'Descrição do Gateway:', 'wc-aditum_card' ),
 					'type'        => 'textarea',
-					'description' => __( 'Adicione uma nova descrição para o aditum.', 'wc-aditum_card' ),
+					'description' => __( 'Adicione uma nova descrição para o aditum', 'wc-aditum_card' ),
 					'default'     => __( 'Porfavor envie o comprovante do seu pagamento para a loja processar o seu pedido..', 'wc-aditum_card' ),
 					'desc_tip'    => true,
 				),
@@ -162,34 +153,27 @@ class WC_Aditum_Card_Pay_Gateway extends WC_Payment_Gateway {
 					'description' => __( 'As instruções iram aparecer na página de Obrigado & Email após o pedido ser feito.', 'wc-aditum_card' ),
 					'desc_tip'    => true,
 				),
-				'aditum_card_max_installments' => array(
-					'title'       => __( 'Número máximo de parcelas', 'wc-aditum_card' ),
-					'type'        => 'text',
-					'description' => __( 'Número máximo de parcelas.', 'wc-aditum_card' ),
-					'default'     => __( '2', 'wc-aditum_card' ),
-					'desc_tip'    => true,
-				),
-				'aditum_card_order_expiry' => array(
+				'aditum_debitcard_order_expiry' => array(
 					'title'       => __( 'Tempo de expiração do Pedido', 'wc-aditum_card' ),
 					'type'        => 'number',
 					'description' => __( 'Depois de quanto tempo o pedido pendente de pagamento deve ser cancelado, define em dias.', 'wc-aditum_card' ),
 					'default'     => __( '3', 'wc-aditum_card' ),
 					'desc_tip'    => true,
 				),
-				'aditum_card_initial_status' => array(
+				'aditum_debitcard_initial_status' => array(
 					'title'       => __( 'Status do Pedido criado', 'wc-aditum_card' ),
 					'type'        => 'select',
 					'options'     => wc_get_order_statuses(),
 					'description' => __( 'Status do pedido criado.', 'wc-aditum_card' ),
 					'desc_tip'    => true,
 				),
-				'aditum_card_cnpj'           => array(
+				'aditum_debitcard_cnpj'           => array(
 					'title'       => __( 'CNPJ Do aditum:', 'wc-aditum_card' ),
 					'type'        => 'text',
 					'description' => __( 'Insira o CNPJ cadastrado no Aditum.', 'wc-aditum_card' ),
 					'desc_tip'    => true,
 				),
-				'aditum_card_merchantKey'    => array(
+				'aditum_debitcard_merchantKey'    => array(
 					'title'       => __( 'Merchant Key Do aditum:', 'wc-aditum_card' ),
 					'type'        => 'text',
 					'description' => __( 'Insira o Merchant Key cadastrado no Aditum.', 'wc-aditum_card' ),
@@ -215,7 +199,7 @@ class WC_Aditum_Card_Pay_Gateway extends WC_Payment_Gateway {
 					'type'    => 'select',
 					'options' => $inputs_address,
 				),
-			
+
 			)
 		);
 	}
@@ -233,23 +217,20 @@ class WC_Aditum_Card_Pay_Gateway extends WC_Payment_Gateway {
 			if ( empty( self::$log ) ) {
 				self::$log = wc_get_logger();
 			}
-			self::$log->log( $level, $message, array( 'source' => 'wc-aditum-card' ) );
+			self::$log->log( $level, $message, array( 'source' => 'wc-aditum-debitcard' ) );
 		}
 	}
 
 	public function validateInputs( $data ) {
 
 		$keys = array(
-			'card_holder_name',
-			'card_holder_document',
-			'aditum_card_number',
-			'aditum_card_cvv',
-			'aditum_card_expiration_month',
-			'aditum_card_year_month',
-			'aditum_checkbox',
-			'aditum_card_installments'
+			'debitcard_holder_name',
+			'debitcard_holder_document',
+			'aditum_debitcard_number',
+			'aditum_debitcard_cvv',
+			'aditum_debitcard_expiration_month',
+			'aditum_debitcard_year_month',
 		);
-
 		foreach ( $data as $key => $input ) {
 			if ( in_array( $key, $keys ) ) {
 				if ( empty( $data[ $key ] ) ) {
@@ -314,11 +295,11 @@ class WC_Aditum_Card_Pay_Gateway extends WC_Payment_Gateway {
 			$cpf = str_replace( '.', '', $order->get_meta( '_billing_cpf' ) );
 			$cpf = str_replace( '-', '', $cpf );
 
-			$cpf_card_holder = str_replace( '.', '', $data['card_holder_document']  );
-			$cpf_card_holder  = str_replace( '-', '', $cpf_card_holder );
+			$cpf_debitcard_holder = str_replace( '.', '', $data['debitcard_holder_document']  );
+			$cpf_debitcard_holder  = str_replace( '-', '', $cpf_debitcard_holder );
 
 			$authorization->customer->setDocument( $cpf );
-			$authorization->transactions->card->setCardholderDocument($cpf_card_holder);
+			$authorization->transactions->card->setCardholderDocument($cpf_debitcard_holder);
 		} else {
 			$authorization->customer->setDocumentType( AditumPayments\ApiSDK\Enum\DocumentType::CNPJ );
 
@@ -326,12 +307,12 @@ class WC_Aditum_Card_Pay_Gateway extends WC_Payment_Gateway {
 			$cnpj = str_replace( '-', '', $cnpj );
 			$cnpj = str_replace( '/', '', $cnpj );
 
-			$cnpj_card_holder = str_replace( '.', '', $order->get_meta( '_billing_cnpj' ) );
-			$cnpj_card_holder = str_replace( '-', '', $cnpj_card_holder );
-			$cnpj_card_holder = str_replace( '/', '', $cnpj_card_holder );
+			$cnpj_debitcard_holder = str_replace( '.', '', $order->get_meta( '_billing_cnpj' ) );
+			$cnpj_debitcard_holder = str_replace( '-', '', $cnpj_debitcard_holder );
+			$cnpj_debitcard_holder = str_replace( '/', '', $cnpj_debitcard_holder );
 
 			$authorization->customer->setDocument( $cnpj );
-			$authorization->transactions->card->setCardholderDocument($cnpj_card_holder);
+			$authorization->transactions->card->setCardholderDocument($cnpj_debitcard_holder);
 		}
 
 		// ! Customer->address
@@ -352,7 +333,7 @@ class WC_Aditum_Card_Pay_Gateway extends WC_Payment_Gateway {
 
 		// ! Transactions
 		$authorization->transactions->setAmount( $amount );
-		$authorization->transactions->setPaymentType( AditumPayments\ApiSDK\Enum\PaymentType::CREDIT );
+		$authorization->transactions->setPaymentType( AditumPayments\ApiSDK\Enum\PaymentType::DEBIT );
 		$authorization->transactions->setInstallmentNumber( 2 ); // Só pode ser maior que 1 se o tipo de transação for crédito.
 
 
@@ -368,11 +349,11 @@ class WC_Aditum_Card_Pay_Gateway extends WC_Payment_Gateway {
 			$authorization->customer->setDocument( $cnpj );
 		}
 		
-		$authorization->transactions->card->setCardNumber( str_replace( ' ', '', $data['aditum_card_number'] ) );
-		$authorization->transactions->card->setCVV( $data['aditum_card_cvv'] );
-		$authorization->transactions->card->setCardholderName( $data['card_holder_name'] );
-		$authorization->transactions->card->setExpirationMonth( $data['aditum_card_expiration_month'] );
-		$authorization->transactions->card->setExpirationYear( 20 . $data['aditum_card_year_month'] );
+		$authorization->transactions->card->setCardNumber( str_replace( ' ', '', $data['aditum_debitcard_number'] ) );
+		$authorization->transactions->card->setCVV( $data['aditum_debitcard_cvv'] );
+		$authorization->transactions->card->setCardholderName( $data['debitcard_holder_name'] );
+		$authorization->transactions->card->setExpirationMonth( $data['aditum_debitcard_expiration_month'] );
+		$authorization->transactions->card->setExpirationYear( 20 . $data['aditum_debitcard_year_month'] );
 
 		// $authorization->transactions->card->setCardNumber("4444333322221111"); // Aprovado
 		// $authorization->transactions->card->setCardNumber("4222222222222224"); // Pendente e aprovar posteriormente
@@ -397,14 +378,14 @@ class WC_Aditum_Card_Pay_Gateway extends WC_Payment_Gateway {
 
 			// ! Insert params to metadata
 			$order->update_meta_data(
-				'_params_aditum_card',
+				'_params_aditum_debitcard',
 				array(
 					'order_id'                     => $order_id,
-					'card_chargeId'                => $res['charge']->id,
-					'card_chargeStatus'            => $res['charge']->chargeStatus,
-					'card_transaction_id'          => $res['charge']->transactions[0]->transactionId,
-					'card_transaction_amount'      => $res['charge']->transactions[0]->amount,
-					'card_transaction_transactionStatus' => $res['charge']->transactions[0]->transactionStatus,
+					'debitcard_chargeId'                => $res['charge']->id,
+					'debitcard_chargeStatus'            => $res['charge']->chargeStatus,
+					'debitcard_transaction_id'          => $res['charge']->transactions[0]->transactionId,
+					'debitcard_transaction_amount'      => $res['charge']->transactions[0]->amount,
+					'debitcard_transaction_transactionStatus' => $res['charge']->transactions[0]->transactionStatus,
 				)
 			);
 
@@ -415,7 +396,7 @@ class WC_Aditum_Card_Pay_Gateway extends WC_Payment_Gateway {
 			if ( AditumPayments\ApiSDK\Enum\ChargeStatus::AUTHORIZED === $res['status'] ) {
 
 					// ! Mark as on-hold (we're awaiting the cheque)
-					$order->update_status( 'completed', __( 'Pagamento Concluído', 'wc-aditum-card' ) );
+					$order->update_status( 'completed', __( 'Pagamento Concluído', 'wc-aditum-debitcard' ) );
 
 					// ! Remove cart
 					$woocommerce->cart->empty_cart();
@@ -432,7 +413,7 @@ class WC_Aditum_Card_Pay_Gateway extends WC_Payment_Gateway {
 					return wc_add_notice( $res['charge']->transactions[0]->errorMessage, 'error' );
 				}else if($res['charge']->transactions[0]->transactionStatus === "PreAuthorized"){
 
-					$order->update_status( 'pending', __( 'Aguardando autorização do pagamento', 'wc-aditum-card' ) );
+					$order->update_status( 'pending', __( 'Aguardando autorização do pagamento', 'wc-aditum-debitcard' ) );
 					
 					return array(
 						'result'   => 'success',
@@ -445,7 +426,7 @@ class WC_Aditum_Card_Pay_Gateway extends WC_Payment_Gateway {
 			}
 		} else {
 			if ( null !== $res ) {
-
+				
 				if($res['httpMsg'] === ''){
 					return wc_add_notice( 'Verifique as credênciais de acesso ao Aditum & tente novamente.', 'error' );
 				}
