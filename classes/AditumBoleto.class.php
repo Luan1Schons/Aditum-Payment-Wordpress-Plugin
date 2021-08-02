@@ -139,7 +139,7 @@ class WC_Aditum_Boleto_Pay_Gateway extends WC_Payment_Gateway {
 		// var_dump(WC()->countries->get_address_fields( $country = '', $type = '_billing'));
 		// exit();
 		$inputs_address = array();
-		$wc_address     = WC()->countries->get_address_fields( $country = '', $type = '_billing_' );
+		$wc_address     = WC()->countries->get_address_fields( null, $type = 'billing_' );
 		foreach ( $wc_address as $key => $address ) {
 			$inputs_address[ $key ] = $key;
 		}
@@ -378,6 +378,7 @@ class WC_Aditum_Boleto_Pay_Gateway extends WC_Payment_Gateway {
 						'boleto_transaction_transactionStatus' => $res['charge']->transactions[0]->transactionStatus,
 						'boleto_transaction_bankSlipUrl' => $res['charge']->transactions[0]->bankSlipUrl,
 						'boleto_transaction_deadline'    => $res['charge']->transactions[0]->deadline,
+						'boleto_environment'			 => $this->environment
 					)
 				);
 

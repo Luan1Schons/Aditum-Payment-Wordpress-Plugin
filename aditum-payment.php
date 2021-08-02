@@ -34,11 +34,12 @@ function child_plugin_activate() {
 	}
 }
 
-add_action( 'wp_enqueue_scripts', 'aditum_scripts_method' );
+add_action( 'wp_enqueue_scripts', 'aditum_enqueue_dependencies' );
 /**
  * Enqueue a script with jQuery as a dependency.
  */
-function aditum_scripts_method() {
+function aditum_enqueue_dependencies() {
+	wp_enqueue_style( 'aditum-style', plugins_url() . '/aditum-payment-gateway/assets/css/style.css' );
 	wp_enqueue_script( 'jquerymask', plugins_url() . '/aditum-payment-gateway/assets/js/jquery.mask.js', array( 'jquery' ), '1.0', false );
 	wp_enqueue_script( 'main-scripts', plugins_url() . '/aditum-payment-gateway/assets/js/app.js', array(), '1.0', false );
 }
@@ -189,8 +190,14 @@ function aditum_add_content_thankyou( $order_id ) {
 			$generator = new Picqer\Barcode\BarcodeGeneratorHTML();
 			echo $generator->getBarcode( $boleto_data['boleto_transaction_barcode'], $generator::TYPE_CODE_128 );
 			echo '<p>' . $boleto_data['boleto_transaction_digitalLine'] . '</p>';
-
-			echo '<a href="' . $boleto_data['boleto_transaction_bankSlipUrl'] . '">Clique aqui para acessar o boleto.</a>';
+			echo '<div style="text-align: center">';
+			if($boleto_data['boleto_environment'] === 'sandbox')
+			{
+				echo '<a href="https://payment-dev.aditum.com.br' . $boleto_data['boleto_transaction_bankSlipUrl'] . '" class="button button-primary download-boleto" >Clique aqui para baixar o boleto</a>';
+			}else{
+				echo '<a href="https://payment.aditum.com.br' . $boleto_data['boleto_transaction_bankSlipUrl'] . '" class="button button-primary download-boleto">Clique aqui para baixar o boleto</a>';
+			}
+			echo '</div>';
 		}
 	}else if ( $order->get_payment_method() === 'aditum_card' )
 	{
@@ -200,6 +207,17 @@ function aditum_add_content_thankyou( $order_id ) {
 			if($card_data['card_transaction_transactionStatus'] === 'PreAuthorized'){
 				echo '<div class="woocommerce-info"><b>Pagamento Pré-Autorizado</b> recebemos o seu pedido mas o seu pagamento ainda não foi totalmente aprovado, assim que a compra for totalmente aprovada te notificaremos por e-mail.	</div>';
 			}else if($card_data['card_transaction_transactionStatus'] === 'Captured'){
+				echo '<div class="woocommerce-message"><b>Pagamento Feito!</b> recebemos o seu pagamento com sucesso.</div>';
+			}
+		}
+	}else if ( $order->get_payment_method() === 'aditum_debitcard' )
+	{
+		$card_data = $order->get_meta( '_params_aditum_debitcard' );
+
+		if ( ! empty( $card_data ) ) {
+			if($card_data['debitcard_transaction_transactionStatus'] === 'PreAuthorized'){
+				echo '<div class="woocommerce-info"><b>Pagamento Pré-Autorizado</b> recebemos o seu pedido mas o seu pagamento ainda não foi totalmente aprovado, assim que a compra for totalmente aprovada te notificaremos por e-mail.	</div>';
+			}else if($card_data['debitcard_transaction_transactionStatus'] === 'Captured'){
 				echo '<div class="woocommerce-message"><b>Pagamento Feito!</b> recebemos o seu pagamento com sucesso.</div>';
 			}
 		}
@@ -414,6 +432,24 @@ function gateway_aditum_card_custom_fields( $description, $payment_id ) {
 			),
 			''
 		);
+
+		woocommerce_form_field( 'aditum_checkbox', array( // CSS ID
+			'type'          => 'checkbox',
+			'class'         => array('form-row mycheckbox'), // CSS Class
+			'label_class'   => array('woocommerce-form__label woocommerce-form__label-for-checkbox checkbox'),
+			'input_class'   => array('woocommerce-form__input woocommerce-form__input-checkbox input-checkbox'),
+			'required'      => true, // Mandatory or Optional
+			'label'         => '<a href="https://drive.google.com/file/d/1bWsmDz9AMe9pNETRCbGk-zl2AOWNpt3a/view?usp=sharing" target="_blank" rel="noopener">TERMOS & CONDIÇÕES</a>', // Label and Link
+		 ));    
+
+		echo '<div>';
+
+		$description .= ob_get_clean(); // ! Append buffered content
+	}else if( 'aditum_boleto' === $payment_id ){
+
+		ob_start(); // ! Start buffering
+
+		echo '<div  class="aditum-debitcard-fields" style="padding:10px 0;">';
 
 		woocommerce_form_field( 'aditum_checkbox', array( // CSS ID
 			'type'          => 'checkbox',
