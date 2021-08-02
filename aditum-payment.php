@@ -77,6 +77,7 @@ function aditum_enqueue_dependencies() {
 	wp_enqueue_style( 'aditum-style', plugins_url() . '/aditum-payment-gateway/assets/css/style.css' );
 	wp_enqueue_script( 'jquerymask', plugins_url() . '/aditum-payment-gateway/assets/js/jquery.mask.js', array( 'jquery' ), '1.0', false );
 	wp_enqueue_script( 'main-scripts', plugins_url() . '/aditum-payment-gateway/assets/js/app.js', array(), '1.0', false );
+}
 
 
 add_filter('woocommerce_checkout_fields', 'custom_billing_fields', 1000, 1);
