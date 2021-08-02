@@ -11,7 +11,6 @@ jQuery.noConflict();
             });
 
             $(document).on('keyup', 'input#aditum_card_number', function(){
-                console.log($('input#aditum_card_number').cleanVal().length);
                 if($('input#aditum_card_number').cleanVal().length == 16){
                     $(".installment_aditum_card").show();
                 }else{

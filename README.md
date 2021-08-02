@@ -7,6 +7,7 @@ Plugin de pagamentos para o WooCommerce da Aditum
 ## Instalação
 
 Baixe o Aditum Payments Gateway WooCommerce pelo GitHub & instale como um Plugin WordPress
+é obrigatório utilizar o plugin: (https://wordpress.org/plugins/woocommerce-extra-checkout-fields-for-brazil/)
 
 ## WebHook
 
