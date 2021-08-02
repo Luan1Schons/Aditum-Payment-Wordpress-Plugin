@@ -303,6 +303,8 @@ class WC_Aditum_Card_Pay_Gateway extends WC_Payment_Gateway {
 		$customer_phone           = substr( $phone, 2 );
 		$amount                   = str_replace( '.', '', $order->get_total() );
 
+		$authorization->setMerchantChargeId($order_id);
+
 		// ! Customer
 		$authorization->customer->setName( $order->get_billing_first_name() . ' ' . $order->get_billing_last_name() );
 		$authorization->customer->setEmail( $order->get_billing_email() );

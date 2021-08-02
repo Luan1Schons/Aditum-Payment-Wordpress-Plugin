@@ -35,18 +35,35 @@ function child_plugin_activate() {
 }
 
 add_action( 'woocommerce_api_aditum', 'webhook' );
-
 /**
  * Webhook function
  */
 function webhook() { 
 
-	$key = $_GET['key'];
-	if( $key == WEBHOOK_KEY && !empty( $_GET['order_id'] ) ){
-		$order_id = isset($_GET['order_id']) ? $_GET['order_id'] : null;
-		$order = wc_get_order( $order_id );
-		$order->payment_complete();
-		wc_reduce_stock_levels($order_id);
+	$key =  isset($_GET['key']) ? $_GET['key']: null;
+
+	if( $key == WEBHOOK_KEY && $key !== null)
+	{
+
+				$input = json_decode(file_get_contents('php://input'), true);
+				$order_id = isset( $input['ChargeId'] ) ? $input['ChargeId']: null;
+				$order = wc_get_order( $order_id );
+				if( $order ){
+					if( 1 === $input['ChargeStatus'] )
+					{
+						$order->payment_complete();
+						wc_reduce_stock_levels( $order_id );
+					}else if( 2 === $input['ChargeStatus'] ){
+						$order->update_status( 'pending', __( 'Pagamento pre-autorizado.', 'wc-aditum-card' ) );
+					}else{ 
+						$order->update_status( 'cancelled', __( 'Pagamento cancelado.', 'wc-aditum-card' ) );
+					}
+				}else{
+					// LOAD THE WC LOGGER
+					$logger = wc_get_logger();
+					// LOG THE FAILED ORDER TO CUSTOM "failed-orders" LOG
+				    $logger->info( 'O pedido com o ID: '.$input['ChargeId'].' Não foi encontrado ', array( 'source' => 'failed-orders' ) );
+				}
 	}
 
 }
