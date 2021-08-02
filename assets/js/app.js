@@ -1,9 +1,26 @@
 jQuery.noConflict();
    (function( $ ) {
        $(function() {
-            
+
+            $(document).ready(function(){
+                $('#aditum_card_installment').hide();
+            });
+
             $(document).on('focus', 'input#aditum_card_number', function(){
-                $('input#aditum_card_number').mask('0000 0000 0000 0000');s
+                $('input#aditum_card_number').mask('0000 0000 0000 0000');
+            });
+
+            $(document).on('keyup', 'input#aditum_card_number', function(){
+                console.log($('input#aditum_card_number').cleanVal().length);
+                if($('input#aditum_card_number').cleanVal().length == 16){
+                    $(".installment_aditum_card").show();
+                }else{
+                    $(".installment_aditum_card").hide();
+                }
+            });
+
+            $(document).on('click', '#payment_method_aditum_debitcard', function(){
+                $('span#card-brand').html();
             });
 
             $(document).on('focusout', 'input#aditum_card_number', function(){

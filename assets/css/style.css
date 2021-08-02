@@ -1,3 +1,10 @@
 .download-boleto {
     margin-bottom: 10px;
 }
+.card_cvv {
+    width: 150px !important;
+}
+
+.installment_aditum_card {
+    display: none;
+}

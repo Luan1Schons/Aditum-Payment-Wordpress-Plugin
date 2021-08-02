@@ -129,13 +129,13 @@ class WC_Aditum_Card_Pay_Gateway extends WC_Payment_Gateway {
 			'woo_aditum_card_pay_fields',
 			array(
 				'enabled'                    => array(
-					'title'   => __( 'Habilitar/Desabilitar', 'wc-aditum_card' ),
+					'title'   => __( 'Habilitar/Desabilitar:', 'wc-aditum_card' ),
 					'type'    => 'checkbox',
 					'label'   => __( 'Habilitar ou desabilitar o Módulo de Pagamento', 'wc-aditum_card' ),
 					'default' => 'no',
 				),
 				'aditum_card_environment'    => array(
-					'title'   => __( 'Ambiente do Gateway', 'wc-aditum_card' ),
+					'title'   => __( 'Ambiente do Gateway:', 'wc-aditum_card' ),
 					'type'    => 'select',
 					'options' => array(
 						'production' => __( 'Produção', 'wc-aditum_card' ),
@@ -143,7 +143,7 @@ class WC_Aditum_Card_Pay_Gateway extends WC_Payment_Gateway {
 					),
 				),
 				'title'                      => array(
-					'title'       => __( 'Título do Gateway', 'wc-aditum_card' ),
+					'title'       => __( 'Título do Gateway:', 'wc-aditum_card' ),
 					'type'        => 'text',
 					'description' => __( 'Adicione um novo título ao aditum, os clientes vão visualizar ese título no checkout.', 'wc-aditum_card' ),
 					'default'     => __( 'Aditum Gateway', 'wc-aditum_card' ),
@@ -163,34 +163,34 @@ class WC_Aditum_Card_Pay_Gateway extends WC_Payment_Gateway {
 					'desc_tip'    => true,
 				),
 				'aditum_card_max_installments' => array(
-					'title'       => __( 'Número máximo de parcelas', 'wc-aditum_card' ),
+					'title'       => __( 'Número máximo de parcelas:', 'wc-aditum_card' ),
 					'type'        => 'text',
 					'description' => __( 'Número máximo de parcelas.', 'wc-aditum_card' ),
 					'default'     => __( '2', 'wc-aditum_card' ),
 					'desc_tip'    => true,
 				),
 				'aditum_card_order_expiry' => array(
-					'title'       => __( 'Tempo de expiração do Pedido', 'wc-aditum_card' ),
+					'title'       => __( 'Tempo de expiração do Pedido:', 'wc-aditum_card' ),
 					'type'        => 'number',
 					'description' => __( 'Depois de quanto tempo o pedido pendente de pagamento deve ser cancelado, define em dias.', 'wc-aditum_card' ),
 					'default'     => __( '3', 'wc-aditum_card' ),
 					'desc_tip'    => true,
 				),
 				'aditum_card_initial_status' => array(
-					'title'       => __( 'Status do Pedido criado', 'wc-aditum_card' ),
+					'title'       => __( 'Status do Pedido criado:', 'wc-aditum_card' ),
 					'type'        => 'select',
 					'options'     => wc_get_order_statuses(),
 					'description' => __( 'Status do pedido criado.', 'wc-aditum_card' ),
 					'desc_tip'    => true,
 				),
 				'aditum_card_cnpj'           => array(
-					'title'       => __( 'CNPJ Do aditum:', 'wc-aditum_card' ),
+					'title'       => __( 'CNPJ:', 'wc-aditum_card' ),
 					'type'        => 'text',
 					'description' => __( 'Insira o CNPJ cadastrado no Aditum.', 'wc-aditum_card' ),
 					'desc_tip'    => true,
 				),
 				'aditum_card_merchantKey'    => array(
-					'title'       => __( 'Merchant Key Do aditum:', 'wc-aditum_card' ),
+					'title'       => __( 'Merchant Token:', 'wc-aditum_card' ),
 					'type'        => 'text',
 					'description' => __( 'Insira o Merchant Key cadastrado no Aditum.', 'wc-aditum_card' ),
 					'desc_tip'    => true,
