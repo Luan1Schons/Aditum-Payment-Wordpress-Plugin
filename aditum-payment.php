@@ -77,20 +77,7 @@ function aditum_enqueue_dependencies() {
 	wp_enqueue_style( 'aditum-style', plugins_url() . '/aditum-payment-gateway/assets/css/style.css' );
 	wp_enqueue_script( 'jquerymask', plugins_url() . '/aditum-payment-gateway/assets/js/jquery.mask.js', array( 'jquery' ), '1.0', false );
 	wp_enqueue_script( 'main-scripts', plugins_url() . '/aditum-payment-gateway/assets/js/app.js', array(), '1.0', false );
-}
 
-add_filter(
-	'template_include',
-	function ( $template ) {
-
-		if ( is_page( wp_strip_all_tags( 'WebHook Aditum Boleto' ) ) ) {
-			return __DIR__ . '/pages/webhook.php';
-		}
-
-		return $template;
-	},
-	99
-);
 
 add_filter('woocommerce_checkout_fields', 'custom_billing_fields', 1000, 1);
 /**
@@ -100,37 +87,6 @@ function custom_billing_fields( $fields ) {
     $fields['billing']['billing_neighborhood']['required'] = true;
 
     return $fields;
-}
-
-register_activation_hook( __FILE__, 'aditum_function_to_run' );
-/**
- * Aditum Function to Run
- */
-function aditum_function_to_run() {
-
-	remove_menu_page('webhook_boleto_aditum');
-
-	$page = array(
-		'post_slug'    => 'webhook_boleto_aditum',
-		'post_title'   => wp_strip_all_tags( 'WebHook Aditum Boleto' ),
-		'post_content' => '',
-		'post_type'    => 'page',
-		'post_status'  => 'publish',
-		'post_author'  => 1,
-	);
-
-	// ! Insert the post into the database
-	$id = wp_insert_post( $page );
-
-	update_option( 'aditum_boleto_webhook_id', $id, '', 'yes' );
-}
-
-register_deactivation_hook( __FILE__, 'trellwoo_function_to_deactive' );
-/**
- * Aditum Function to Deactive
- */
-function trellwoo_function_to_deactive() {
-	wp_delete_post( get_option( 'aditum_boleto_webhook_id' ), true );
 }
 
 add_action( 'plugins_loaded', 'aditum_gateways_init', 0 );
