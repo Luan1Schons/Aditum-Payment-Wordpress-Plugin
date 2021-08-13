@@ -106,7 +106,8 @@ class WC_Aditum_Card_Pay_Gateway extends WC_Payment_Gateway {
 
 		$this->expiry_date = $this->get_option( 'aditum_card_order_expiry' );
 
-		$this->max_installment = $this->get_option( 'aditum_card_max_installments' );
+		$this->max_installments = $this->get_option( 'aditum_card_max_installments' );
+		$this->min_installments_amount = $this->get_option( 'aditum_card_min_installment_amount' );
 
 		$this->init_form_fields();
 		$this->init_settings();
@@ -114,7 +115,9 @@ class WC_Aditum_Card_Pay_Gateway extends WC_Payment_Gateway {
 		add_action( 'woocommerce_update_options_payment_gateways_' . $this->id, array( $this, 'process_admin_options' ) );
 		add_action( 'woocommerce_thank_you_' . $this->id, array( $this, 'thankyou_page' ) );
 		add_action( 'woocommerce_email_before_order_table', array( $this, 'email_instructions' ), 10, 3 );
+		
 	}
+
 	/**
 	 * Init init_form_fields form fields
 	 */
@@ -160,6 +163,13 @@ class WC_Aditum_Card_Pay_Gateway extends WC_Payment_Gateway {
 					'title'       => __( 'Instruções Após o Pedido:', 'wc-aditum_card' ),
 					'type'        => 'textarea',
 					'description' => __( 'As instruções iram aparecer na página de Obrigado & Email após o pedido ser feito.', 'wc-aditum_card' ),
+					'desc_tip'    => true,
+				),
+				'aditum_card_min_installment_amount' => array(
+					'title'       => __( 'Valor mínimo da parcela:', 'wc-aditum_card' ),
+					'type'        => 'text',
+					'description' => __( 'Valor mínimo da parcela.', 'wc-aditum_card' ),
+					'default'     => __( '5', 'wc-aditum_card' ),
 					'desc_tip'    => true,
 				),
 				'aditum_card_max_installments' => array(
@@ -214,7 +224,7 @@ class WC_Aditum_Card_Pay_Gateway extends WC_Payment_Gateway {
 					'title'   => __( 'Definições do Endereço - Bairro:', 'wc-aditum_card' ),
 					'type'    => 'select',
 					'options' => $inputs_address,
-				),
+				)
 			
 			)
 		);
@@ -304,6 +314,7 @@ class WC_Aditum_Card_Pay_Gateway extends WC_Payment_Gateway {
 		$amount                   = str_replace( '.', '', $order->get_total() );
 
 		$authorization->setMerchantChargeId($order_id);
+        $authorization->setSessionId($_POST['antifraud_token']);
 
 		// ! Customer
 		$authorization->customer->setName( $order->get_billing_first_name() . ' ' . $order->get_billing_last_name() );
