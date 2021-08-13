@@ -40,31 +40,50 @@ add_action( 'woocommerce_api_aditum', 'webhook' );
  */
 function webhook() { 
 
-	$key =  isset($_GET['key']) ? $_GET['key']: null;
+	$logger = wc_get_logger();
 
+	$input = file_get_contents('php://input');
+	/*
+	$fp = fopen(dirname(__DIR__, 1).'/results.json', 'w');
+	fwrite($fp, json_encode($input));
+	fclose($fp);
+	*/
+
+	$logger->info( $input, array( 'source' => 'failed-orders' ) );
+
+	$key =  isset($_GET['key']) ? $_GET['key']: null;
 	if( $key == WEBHOOK_KEY && $key !== null)
-	{
+	{	
 
 				$input = json_decode(file_get_contents('php://input'), true);
+
 				$order_id = isset( $input['ChargeId'] ) ? $input['ChargeId']: null;
 				$order = wc_get_order( $order_id );
-				if( $order ){
-					if( 1 === $input['ChargeStatus'] )
+
+				if( isset( $order ) ){
+
+					if( 1 == $input['ChargeStatus'] )
 					{
+						
 						$order->payment_complete();
 						wc_reduce_stock_levels( $order_id );
-					}else if( 2 === $input['ChargeStatus'] ){
+
+					}else if( 2 == $input['ChargeStatus'] ){
+
 						$order->update_status( 'pending', __( 'Pagamento pre-autorizado.', 'wc-aditum-card' ) );
+						
 					}else{ 
+
 						$order->update_status( 'cancelled', __( 'Pagamento cancelado.', 'wc-aditum-card' ) );
+
 					}
 				}else{
-					// LOAD THE WC LOGGER
-					$logger = wc_get_logger();
 					// LOG THE FAILED ORDER TO CUSTOM "failed-orders" LOG
 				    $logger->info( 'O pedido com o ID: '.$input['ChargeId'].' Não foi encontrado ', array( 'source' => 'failed-orders' ) );
 				}
 	}
+
+	exit();
 
 }
 
@@ -74,9 +93,13 @@ add_action( 'wp_enqueue_scripts', 'aditum_enqueue_dependencies' );
  */
 function aditum_enqueue_dependencies() {
 	//wp_enqueue_style( 'aditum-style', plugins_url() . '/aditum-payment-gateway/assets/css/bootstrap.min.css' );
-	wp_enqueue_style( 'aditum-style', plugins_url() . '/aditum-payment-gateway/assets/css/style.css' );
-	wp_enqueue_script( 'jquerymask', plugins_url() . '/aditum-payment-gateway/assets/js/jquery.mask.js', array( 'jquery' ), '1.0', false );
-	wp_enqueue_script( 'main-scripts', plugins_url() . '/aditum-payment-gateway/assets/js/app.js', array(), '1.0', false );
+	wp_enqueue_style( 'aditum-style', plugins_url() . '/aditum-payment-gateway/assets/css/style.css', [], time() );
+	wp_enqueue_script( 'jquerymask', plugins_url() . '/aditum-payment-gateway/assets/js/jquery.mask.js', array( 'jquery' ), time(), false );
+	wp_enqueue_script( 'main-scripts', plugins_url() . '/aditum-payment-gateway/assets/js/app.js', array(), time(), false );
+	wp_add_inline_script( 'main-scripts', "window.antifraude_id = '".get_option('aditum_antifraude_id')."'" );
+	wp_add_inline_script( 'main-scripts', "window.antifraude_type = '".get_option('aditum_antifraude_type')."'" );
+	wp_enqueue_script( 'antifraude', plugins_url() . '/aditum-payment-gateway/assets/js/antifraud.js', array('main-scripts'), time(), false );
+	
 }
 
 
@@ -216,15 +239,18 @@ function gateway_aditum_card_custom_fields( $description, $payment_id ) {
 		
 		$total = WC()->cart->get_total(null);
 
-		$installment_options = [];
+		$installment_options = ['' => 'Selecione a quantidade de parcelas'];
 		$card = new WC_Aditum_Card_Pay_Gateway();
-		$installment_count = $card->max_installment;
+		$installment_count = $card->max_installments ? $card->max_installments : 20;
 		
 		
 		for($i = 1; $i <= $installment_count;$i++){
 			$installment_total = $total/$i;
 			$installment_plural = ($i > 1 ? 'Parcelas' : 'Parcela');
-			$installment_options[$i] = $i.' '.$installment_plural.' de R$'.number_format($installment_total, 2);
+			if($installment_total < $card->min_installments_amount) {
+				continue;
+			}
+			$installment_options[$i] = $i.' '.$installment_plural.' de R$'.number_format($installment_total, 2, ',', '.');
 		}
 		
 
@@ -247,7 +273,7 @@ function gateway_aditum_card_custom_fields( $description, $payment_id ) {
 			'card_holder_document',
 			array(
 				'type'     => 'text',
-				'label'    => __( 'CPF/CNPJ do Titular', 'woocommerce' ),
+				'label'    => __( 'CPF', 'woocommerce' ),
 				'class'    => array( 'form-row form-row-wide' ),
 				'required' => true,
 			),
@@ -267,25 +293,15 @@ function gateway_aditum_card_custom_fields( $description, $payment_id ) {
 
 		echo '<span id="card-brand"></span>';
 
-		woocommerce_form_field(
-			'aditum_card_cvv',
-			array(
-				'type'     => 'text',
-				'label'    => __( 'Código de segurança CVV', 'woocommerce' ),
-				'class'    => array( 'form-row form-row-wide' ),
-				'input_class'   => array('card_cvv'),
-				'required' => true,
-			),
-			''
-		);
 
 		woocommerce_form_field(
 			'aditum_card_expiration_month',
 			array(
-				'type'     => 'number',
-				'label'    => __( 'Mês Expiração', 'woocommerce' ),
+				'type'     => 'text',
+				'label'    => __( 'Data de validade', 'woocommerce' ),
 				'class'    => array( 'form-row form-row-first' ),
 				'required' => true,
+				'placeholder' => 'MM',
 			),
 			''
 		);
@@ -293,14 +309,26 @@ function gateway_aditum_card_custom_fields( $description, $payment_id ) {
 		woocommerce_form_field(
 			'aditum_card_year_month',
 			array(
-				'type'     => 'number',
+				'type'     => 'text',
 				'label'    => __( 'Ano Expiração', 'woocommerce' ),
 				'class'    => array( 'form-row form-row-last' ),
 				'required' => true,
+				'placeholder' => 'YY',
 			),
 			''
 		);
 
+		woocommerce_form_field(
+			'aditum_card_cvv',
+			array(
+				'type'     => 'text',
+				'label'    => __( 'Número de Verificação do Cartão', 'woocommerce' ),
+				'class'    => array( 'form-row form-row-wide' ),
+				'input_class'   => array('card_cvv'),
+				'required' => true,
+			),
+			''
+		);
 		woocommerce_form_field(
 			'aditum_card_installment',
 			array(
@@ -320,7 +348,7 @@ function gateway_aditum_card_custom_fields( $description, $payment_id ) {
 			'label_class'   => array('woocommerce-form__label woocommerce-form__label-for-checkbox checkbox'),
 			'input_class'   => array('woocommerce-form__input woocommerce-form__input-checkbox input-checkbox'),
 			'required'      => true, // Mandatory or Optional
-			'label'         => '<a href="https://drive.google.com/file/d/1bWsmDz9AMe9pNETRCbGk-zl2AOWNpt3a/view?usp=sharing" target="_blank" rel="noopener">TERMOS & CONDIÇÕES</a>', // Label and Link
+			'label'         => '<a href="'.plugin_dir_url(__FILE__).'assets/Termos-de-Uso-Portal-Aditum-V3-20210512.pdf" target="_blank" rel="noopener">TERMOS & CONDIÇÕES</a>', // Label and Link
 		 ));    
 
 		 echo '</div>';
@@ -338,7 +366,7 @@ function gateway_aditum_card_custom_fields( $description, $payment_id ) {
 			'label_class'   => array('woocommerce-form__label woocommerce-form__label-for-checkbox checkbox'),
 			'input_class'   => array('woocommerce-form__input woocommerce-form__input-checkbox input-checkbox'),
 			'required'      => true, // Mandatory or Optional
-			'label'         => '<a href="https://drive.google.com/file/d/1bWsmDz9AMe9pNETRCbGk-zl2AOWNpt3a/view?usp=sharing" target="_blank" rel="noopener">TERMOS & CONDIÇÕES</a>', // Label and Link
+			'label'         => '<a href="'.plugin_dir_url(__FILE__).'assets/Termos-de-Uso-Portal-Aditum-V3-20210512.pdf" target="_blank" rel="noopener">TERMOS & CONDIÇÕES</a>', // Label and Link
 		 ));    
 
 		echo '<div>';
@@ -397,3 +425,49 @@ function aditum_get_card_brand() {
 }
 
 add_option( 'woocommerce_pay_page_id', get_option( 'woocommerce_thanks_page_id' ) );
+
+add_action( 'woocommerce_after_order_notes', function(){
+	echo '<input type="hidden" class="input-hidden" name="antifraud_token" id="antifraud_token" />';
+} );
+
+add_filter( 'woocommerce_settings_tabs_array', function($settings_tabs){
+	$settings_tabs['settings_tab_aditum_antifraude'] = __( 'Antifraude', 'woocommerce-settings-tab-aditum-antifraude' );
+    return $settings_tabs;
+}, 50 );
+
+function get_aditum_antifraude_settings() {
+	$settings = array(
+        'section_title' => array(
+            'name'     => __( 'Antifraude', 'woocommerce-settings-tab-aditum-antifraude' ),
+            'type'     => 'title',
+            'desc'     => '',
+            'id'       => 'wc_settings_tab_aditum_antifraude_section_title'
+        ),
+		'aditum_antifraude_type' => array(
+			'title'   => __( 'Tipo de Antifraude:', 'wc-aditum' ),
+			'type'    => 'select',
+			'options' => ['konduto' => 'Konduto', 'clearsale' => 'Clear Sale'],
+			'id'   => 'aditum_antifraude_type'
+		),
+		'aditum_antifraude_id'   => array(
+			'title'       => __( 'Token:', 'wc-aditum' ),
+			'type'        => 'text',
+			'description' => __( 'Token.', 'wc-aditum' ),
+			'desc_tip'    => true,
+			'id'   => 'aditum_antifraude_id'
+		),
+        'section_end' => array(
+             'type' => 'sectionend',
+             'id' => 'wc_settings_settings_tab_aditum_antifraude_section_end'
+        )
+	);
+	return apply_filters( 'wc_settings_settings_tab_aditum_antifraude_settings', $settings );
+}
+
+add_action( 'woocommerce_settings_tabs_settings_tab_aditum_antifraude', function(){
+	woocommerce_admin_fields(get_aditum_antifraude_settings());
+});
+
+add_action( 'woocommerce_update_options_settings_tab_aditum_antifraude', function () {
+    woocommerce_update_options( get_aditum_antifraude_settings() );
+} );

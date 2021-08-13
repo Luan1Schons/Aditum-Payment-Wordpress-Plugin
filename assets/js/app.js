@@ -3,19 +3,11 @@ jQuery.noConflict();
        $(function() {
 
             $(document).ready(function(){
-                $('#aditum_card_installment').hide();
+                // $('#aditum_card_installment').hide();
             });
 
             $(document).on('focus', 'input#aditum_card_number', function(){
                 $('input#aditum_card_number').mask('0000 0000 0000 0000');
-            });
-
-            $(document).on('keyup', 'input#aditum_card_number', function(){
-                if($('input#aditum_card_number').cleanVal().length == 16){
-                    $(".installment_aditum_card").show();
-                }else{
-                    $(".installment_aditum_card").hide();
-                }
             });
 
             $(document).on('click', '#payment_method_aditum_debitcard', function(){
@@ -28,43 +20,43 @@ jQuery.noConflict();
                     if(response.status == 'success'){
 
                         //$('span#card-brand').text('Bandeira: ' + response.brand);
-                        if(response.brand == "Mastercard"){
+                        if(response.brand.toLowerCase() == "mastercard"){
                             $('span#card-brand').html('<img src="/wp-content/plugins/aditum-payment-gateway/assets/bandeiras/mastercard.svg"/>');
-                        } else if(response.brand == "Visa"){
+                        } else if(response.brand.toLowerCase() == "visa"){
                             $('span#card-brand').html('<img src="/wp-content/plugins/aditum-payment-gateway/assets/bandeiras/visa.svg"/>');
-                        } else if(response.brand == "Alelo"){
+                        } else if(response.brand.toLowerCase() == "alelo"){
                             $('span#card-brand').html('<img src="/wp-content/plugins/aditum-payment-gateway/assets/bandeiras/alelo.svg"/>');
-                        } else if(response.brand == "Vr"){
+                        } else if(response.brand.toLowerCase() == "vr"){
                             $('span#card-brand').html('<img src="/wp-content/plugins/aditum-payment-gateway/assets/bandeiras/vr.svg"/>');
-                        } else if(response.brand == "Vero"){
+                        } else if(response.brand.toLowerCase() == "vero"){
                             $('span#card-brand').html('<img src="/wp-content/plugins/aditum-payment-gateway/assets/bandeiras/vero.svg"/>');
-                        } else if(response.brand == "VerdeCard"){
+                        } else if(response.brand.toLowerCase() == "verdecard"){
                             $('span#card-brand').html('<img src="/wp-content/plugins/aditum-payment-gateway/assets/bandeiras/verdecard.svg"/>');
-                        } else if(response.brand == "Ticket"){
+                        } else if(response.brand.toLowerCase() == "ticket"){
                             $('span#card-brand').html('<img src="/wp-content/plugins/aditum-payment-gateway/assets/bandeiras/ticket.svg"/>');
-                        } else if(response.brand == "Sorocred"){
+                        } else if(response.brand.toLowerCase() == "sorocred"){
                             $('span#card-brand').html('<img src="/wp-content/plugins/aditum-payment-gateway/assets/bandeiras/sorocred.svg"/>');
-                        } else if(response.brand == "Sodexo"){
+                        } else if(response.brand.toLowerCase() == "sodexo"){
                             $('span#card-brand').html('<img src="/wp-content/plugins/aditum-payment-gateway/assets/bandeiras/sodexo.svg"/>');
-                        } else if(response.brand == "Maestro"){
+                        } else if(response.brand.toLowerCase() == "maestro"){
                             $('span#card-brand').html('<img src="/wp-content/plugins/aditum-payment-gateway/assets/bandeiras/maestro.svg"/>');
-                        } else if(response.brand == "Jcb"){
-                            $('span#card-brand').html('<img src="/wp-content/plugins/aditum-payment-gateway/assets/bandeiras/JCB.svg"/>');
-                        } else if(response.brand == "Hipercard"){
+                        } else if(response.brand.toLowerCase() == "jcb"){
+                            $('span#card-brand').html('<img src="/wp-content/plugins/aditum-payment-gateway/assets/bandeiras/jcb.svg"/>');
+                        } else if(response.brand.toLowerCase() == "hipercard"){
                             $('span#card-brand').html('<img src="/wp-content/plugins/aditum-payment-gateway/assets/bandeiras/hipercard.svg"/>');
-                        } else if(response.brand == "Hiper"){
+                        } else if(response.brand.toLowerCase() == "hiper"){
                             $('span#card-brand').html('<img src="/wp-content/plugins/aditum-payment-gateway/assets/bandeiras/hiper.svg"/>');
-                        } else if(response.brand == "Elo"){
+                        } else if(response.brand.toLowerCase() == "elo"){
                             $('span#card-brand').html('<img src="/wp-content/plugins/aditum-payment-gateway/assets/bandeiras/elo.svg"/>');
-                        } else if(response.brand == "Discover"){
+                        } else if(response.brand.toLowerCase() == "discover"){
                             $('span#card-brand').html('<img src="/wp-content/plugins/aditum-payment-gateway/assets/bandeiras/discover.svg"/>');
-                        } else if(response.brand == "Dinerclub"){
+                        } else if(response.brand.toLowerCase() == "dinerclub"){
                             $('span#card-brand').html('<img src="/wp-content/plugins/aditum-payment-gateway/assets/bandeiras/dinerclub.svg"/>');
-                        } else if(response.brand == "Cabal"){
+                        } else if(response.brand.toLowerCase() == "cabal"){
                             $('span#card-brand').html('<img src="/wp-content/plugins/aditum-payment-gateway/assets/bandeiras/cabal.svg"/>');
-                        } else if(response.brand == "Banricard"){
+                        } else if(response.brand.toLowerCase() == "banricard"){
                             $('span#card-brand').html('<img src="/wp-content/plugins/aditum-payment-gateway/assets/bandeiras/banricard.svg"/>');
-                        } else if(response.brand == "Amex"){
+                        } else if(response.brand.toLowerCase() == "amex"){
                             $('span#card-brand').html('<img src="/wp-content/plugins/aditum-payment-gateway/assets/bandeiras/amex.svg"/>');
                         }else{
                             $('span#card-brand').html('<img src="/wp-content/plugins/aditum-payment-gateway/assets/bandeiras/outras.svg"/>');

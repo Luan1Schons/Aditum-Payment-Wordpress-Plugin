@@ -4,7 +4,81 @@
 .card_cvv {
     width: 150px !important;
 }
-
-.installment_aditum_card {
+.aditum-card-fields p label {
+    margin: 5px 0;
+    font-size: 14px;
+}
+.payment_method_aditum_card p {
+    margin-bottom: 15px!important;
+}
+.payment_method_aditum_boleto .form-row .required,
+.payment_method_aditum_card .form-row .required {
+    text-decoration: none!important;
+}
+#aditum_card_number_field + p {
+    margin-bottom: 0!important;
+}
+#aditum_card_number {
+    padding-left: 55px;
+    background-image: url('../bandeiras/credit-card.svg')!important;
+    background-repeat: no-repeat!important;
+    background-position: 10px center!important;
+    background-size: 36px auto!important;
+}
+#card-brand img {
+    float: left!important;
+}
+#card-brand img {
+    position: relative;
+    top: -48px;
+    left: 10px;
+    margin-bottom: -25px;
+    display: block;
+}
+#aditum_checkbox_field abbr {
     display: none;
+}
+#aditum_checkbox_field input.input-checkbox {
+    border: none!important;
+    outline: none!important;
+    box-shadow: none!important;
+}
+#aditum_checkbox_field a {
+    color: red;
+    text-decoration: none;
+}
+.form-row.woocommerce-invalid input.input-text,
+.payment_method_aditum_card select,
+.payment_method_aditum_card input.input-text {
+    border: 1px solid #ccc!important;
+    box-shadow: none!important;
+    height: 40px;
+    border-radius: 0;
+    background: #fff!important;
+    padding: 0 15px;
+}
+#aditum_card_expiration_month,
+#aditum_card_year_month {
+    width: 50px;
+    padding: 10px;
+}
+#aditum_card_year_month_field label {
+    display: none;
+}
+#aditum_card_expiration_month_field {
+    width: 52px;
+}
+
+#aditum_card_expiration_month_field label {
+    white-space: nowrap;
+}
+#aditum_card_year_month_field {
+    float: left!important;
+    padding-top: 32px;
+}
+#card_holder_name_field,
+#card_holder_document_field,
+#aditum_card_number_field,
+#aditum_card_installment_field {
+    width: 300px;
 }

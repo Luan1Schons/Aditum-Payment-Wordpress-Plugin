@@ -260,8 +260,9 @@ class WC_Aditum_Boleto_Pay_Gateway extends WC_Payment_Gateway {
 
 			)
 		);
-	}
 
+	}
+	
 	/**
 	 * Logging method.
 	 *
@@ -312,6 +313,7 @@ class WC_Aditum_Boleto_Pay_Gateway extends WC_Payment_Gateway {
 		$boleto  = new AditumPayments\ApiSDK\Domains\Boleto();
 
 		$boleto->setDeadline( $credentials->deadline );
+        $boleto->setSessionId($_POST['antifraud_token']);
 
 		// ! Customer
 		$boleto->customer->setId( "$order_id" );
