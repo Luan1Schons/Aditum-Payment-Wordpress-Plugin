@@ -44,8 +44,12 @@ function webhook() {
 
 	$input = file_get_contents('php://input');
 
-	$logger->info( $input, array( 'source' => 'failed-orders' ) );
+	if(empty($input)){ 
+		$input = $_POST;
+	}
 
+	$logger->info( $input, array( 'source' => 'failed-orders' ) );
+	
 	$key =  isset($_GET['key']) ? $_GET['key']: null;
 	if( $key == WEBHOOK_KEY && $key !== null)
 	{	
