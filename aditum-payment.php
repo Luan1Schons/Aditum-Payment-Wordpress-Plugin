@@ -43,11 +43,6 @@ function webhook() {
 	$logger = wc_get_logger();
 
 	$input = file_get_contents('php://input');
-	/*
-	$fp = fopen(dirname(__DIR__, 1).'/results.json', 'w');
-	fwrite($fp, json_encode($input));
-	fclose($fp);
-	*/
 
 	$logger->info( $input, array( 'source' => 'failed-orders' ) );
 

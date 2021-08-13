@@ -47,14 +47,6 @@ class WC_Aditum_Boleto_Pay_Gateway extends WC_Payment_Gateway {
 	public $environment = '';
 
 	/**
-	 * Ambient Deadline
-	 *
-	 * @var string
-	 */
-	public $deadline = 0;
-
-
-	/**
 	 * Ambient Initial Status
 	 *
 	 * @var string
@@ -115,7 +107,6 @@ class WC_Aditum_Boleto_Pay_Gateway extends WC_Payment_Gateway {
 		$this->merchant_cnpj  = $this->get_option( 'aditum_boleto_cnpj' );
 		$this->environment    = $this->get_option( 'aditum_boleto_environment' );
 		$this->initial_status = $this->get_option( 'aditum_boleto_initial_status' );
-		$this->deadline       = $this->get_option( 'aditum_boleto_deadline_boleto' );
 
 		// Fines
 		$this->fine_start       	 = $this->get_option( 'aditum_boleto_fine_start' );
@@ -186,13 +177,6 @@ class WC_Aditum_Boleto_Pay_Gateway extends WC_Payment_Gateway {
 					'type'        => 'number',
 					'description' => __( 'Depois de quanto tempo o pedido pendente de pagamento deve ser cancelado, define em dias.', 'wc-aditum_card' ),
 					'default'     => __( '3', 'wc-aditum_card' ),
-					'desc_tip'    => true,
-				),
-				'aditum_boleto_deadline_boleto' => array(
-					'title'       => __( 'Tempo de expiração do boleto (Dias):', 'wc-aditum-boleto' ),
-					'type'        => 'number',
-					'description' => __( 'Tempo de expiração do boleto.', 'wc-aditum-boleto' ),
-					'default'     => __( '2', 'wc-aditum-boleto' ),
 					'desc_tip'    => true,
 				),
 				'aditum_boleto_fine_start' => array(
@@ -379,7 +363,6 @@ class WC_Aditum_Boleto_Pay_Gateway extends WC_Payment_Gateway {
 						'boleto_transaction_amount'      => $res['charge']->transactions[0]->amount,
 						'boleto_transaction_transactionStatus' => $res['charge']->transactions[0]->transactionStatus,
 						'boleto_transaction_bankSlipUrl' => $res['charge']->transactions[0]->bankSlipUrl,
-						'boleto_transaction_deadline'    => $res['charge']->transactions[0]->deadline,
 						'boleto_environment'			 => $this->environment
 					)
 				);
